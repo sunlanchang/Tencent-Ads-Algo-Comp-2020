@@ -41,4 +41,4 @@
 
 - age和gender是随机的，提交准确率0.66
 - age和gender都为1，提交准确率0.707
-- LightGBM的baseline训练10个epoch，提交准确率0.91
+- LightGBM的baseline训练10和50个epoch，提交准确率均为0.91，其中age准确率0.22582、gender准确率0.687186。

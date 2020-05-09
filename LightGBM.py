@@ -120,10 +120,10 @@ def LGBM_age():
 
 
 # %%
-gbm_gender = LGBM_gender()
-gbm_age = LGBM_age()
-# gbm_gender = lgb.Booster(model_file='tmp/model_gender.txt')
-# gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
+# gbm_gender = LGBM_gender()
+# gbm_age = LGBM_age()
+gbm_gender = lgb.Booster(model_file='tmp/model_gender.txt')
+gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
 
 
 # %%
@@ -171,8 +171,8 @@ def test():
 
     print('start voting...')
     d = {'user_id': X_test.user_id.values.tolist(),
-         'age': y_pred_age.tolist(),
-         'gender': y_pred_gender.tolist(),
+         'predicted_age': y_pred_age.tolist(),
+         'predicted_gender': y_pred_gender.tolist(),
          }
     ans_df = pd.DataFrame(data=d)
     # 投票的方式决定gender、age
@@ -181,14 +181,13 @@ def test():
     ans_df_grouped['user_id'] = ans_df_grouped.index
     ans_df_grouped.gender = ans_df_grouped.gender+1
     ans_df_grouped.age = ans_df_grouped.age+1
-    ans_df_grouped.to_csv(
-        'data/ans_test.csv', header=['user_id', 'predicted_age', 'predicted_gender'], index=False)
+    columns_order = ['user_id', 'predicted_age', 'predicted_gender']
+    ans_df_grouped[columns_order].to_csv(
+        'data/ans_test.csv', header=True, columns=['user_id', 'predicted_age', 'predicted_gender'], index=False)
     print('Done!!!')
 
 
 test()
-# %%
-pass
 # %%
 # for leaves in range(10, 13):
 #     gbm_age = LGBM_age(leaves)
