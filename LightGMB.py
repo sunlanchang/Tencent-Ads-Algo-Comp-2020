@@ -60,7 +60,7 @@ def LGBM_gender():
         'objective': 'binary',
         'metric': {'binary_logloss', 'binary_error'},  # evaluate指标
         'max_depth': -1,             # 不限制树深度
-        'num_leaves': 2**8,
+        'num_leaves': 2**10,
         'min_data_in_leaf': 1,
         'learning_rate': 0.1,
         # 'feature_fraction': 0.9,
@@ -69,11 +69,11 @@ def LGBM_gender():
         # 'is_provide_training_metric': True,
         'verbose': 1
     }
-    print('Starting training...')
+    print('Start training...')
     # train
     gbm = lgb.train(params_gender,
                     lgb_train_gender,
-                    num_boost_round=100,
+                    num_boost_round=50,
                     valid_sets=lgb_eval_gender,
                     # early_stopping_rounds=5,
                     )
@@ -92,7 +92,7 @@ def LGBM_age():
         'objective': 'multiclass',
         "num_class": 10,
         # fine-tuning最重要的三个参数
-        'num_leaves': 2**8-1,
+        'num_leaves': 2**10-1,
         'max_depth': -1,             # 不限制树深度
         'min_data_in_leaf': 1,
 
@@ -104,7 +104,7 @@ def LGBM_age():
         # 'bagging_freq': 5,
         'verbose': 1
     }
-    print('Starting training...')
+    print('Start training...')
     # train
     gbm = lgb.train(params_age,
                     lgb_train_age,
@@ -112,7 +112,6 @@ def LGBM_age():
                     valid_sets=lgb_eval_age,
                     # early_stopping_rounds=5,
                     )
-    print('training done!')
     print('Saving model...')
     # save model to file
     gbm.save_model('tmp/model_age.txt')
@@ -121,15 +120,15 @@ def LGBM_age():
 
 
 # %%
-# gbm_gender = LGBM_gender()
-# gbm_age = LGBM_age()
-gbm_gender = lgb.Booster(model_file='tmp/model_gender.txt')
-gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
+gbm_gender = LGBM_gender()
+gbm_age = LGBM_age()
+# gbm_gender = lgb.Booster(model_file='tmp/model_gender.txt')
+# gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
 
 
 # %%
 def evaluate():
-    print('Starting predicting...')
+    print('Start predicting...')
     y_pred_gender_probability = gbm_gender.predict(
         X_val, num_iteration=gbm_gender.best_iteration)
     threshold = 0.5
@@ -138,7 +137,7 @@ def evaluate():
     print('threshold: {:.1f} The accuracy of prediction is:{:.2f}'.format(threshold,
                                                                           accuracy_score(y_val_gender, y_pred_gender)))
     # %%
-    print('Starting evaluate data predicting...')
+    print('Start evaluate data predicting...')
     y_pred_age_probability = gbm_age.predict(
         X_val, num_iteration=gbm_age.best_iteration)
     y_pred_age = np.argmax(y_pred_age_probability, axis=1)
@@ -159,18 +158,18 @@ def evaluate():
 
 # %%
 def test():
-    print('Starting test gender data predicting...')
+    print('Start predicting test gender data ...')
     y_pred_gender_probability = gbm_gender.predict(
         X_test, num_iteration=gbm_gender.best_iteration)
     threshold = 0.5
     y_pred_gender = np.where(y_pred_gender_probability > threshold, 1, 0)
 
-    print('Starting test age data predicting...')
+    print('Start predicting test age data ...')
     y_pred_age_probability = gbm_age.predict(
         X_test, num_iteration=gbm_age.best_iteration)
     y_pred_age = np.argmax(y_pred_age_probability, axis=1)
 
-    print('perform voting...')
+    print('start voting...')
     d = {'user_id': X_test.user_id.values.tolist(),
          'age': y_pred_age.tolist(),
          'gender': y_pred_gender.tolist(),
@@ -179,11 +178,17 @@ def test():
     # 投票的方式决定gender、age
     ans_df_grouped = ans_df.groupby(['user_id']).agg(
         lambda x: x.value_counts().index[0])
+    ans_df_grouped['user_id'] = ans_df_grouped.index
     ans_df_grouped.gender = ans_df_grouped.gender+1
     ans_df_grouped.age = ans_df_grouped.age+1
-    ans_df_grouped.to_csv('data/ans_test.csv', header=True)
+    ans_df_grouped.to_csv(
+        'data/ans_test.csv', header=['user_id', 'predicted_age', 'predicted_gender'], index=False)
     print('Done!!!')
 
+
+test()
+# %%
+pass
 # %%
 # for leaves in range(10, 13):
 #     gbm_age = LGBM_age(leaves)
@@ -198,4 +203,3 @@ def test():
 
 
 # %%
-test()

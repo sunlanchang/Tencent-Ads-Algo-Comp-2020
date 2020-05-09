@@ -3,7 +3,7 @@
 
 # TODO
 
-- [ ] LightGBM+voting
+- [x] LightGBM+voting
 - [ ] LightGBM+LightGBM
 - [ ] LightGBM+RNN
 - [ ] RNN
@@ -34,3 +34,7 @@
 
 合并之后的数据：
 ![](img/data_merged.png)
+
+# 训练记录
+
+LightGBM的baseline训练10个epoch，官网提交准确率0.91
