@@ -38,12 +38,18 @@ y_val_age.age = y_val_age.age-1
 X_test = df_test[feature_columns]
 
 print('Loading data uses {:.1f}s'.format(time.time()-start))
+categorical_feature = ['industry', 'advertiser_id',
+                       'product_category', 'product_id', 'ad_id', 'creative_id', 'user_id']
 # 构建性别数据
-lgb_train_gender = lgb.Dataset(X_train, y_train_gender)
-lgb_eval_gender = lgb.Dataset(X_val, y_val_gender, reference=lgb_train_gender)
+lgb_train_gender = lgb.Dataset(
+    X_train, y_train_gender, feature_name=feature_columns, categorical_feature=categorical_feature)
+lgb_eval_gender = lgb.Dataset(
+    X_val, y_val_gender, reference=lgb_train_gender, feature_name=feature_columns, categorical_feature=categorical_feature)
 # 构建年龄数据
-lgb_train_age = lgb.Dataset(X_train, y_train_age)
-lgb_eval_age = lgb.Dataset(X_val, y_val_age, reference=lgb_train_age)
+lgb_train_age = lgb.Dataset(
+    X_train, y_train_age, feature_name=feature_columns, categorical_feature=categorical_feature)
+lgb_eval_age = lgb.Dataset(
+    X_val, y_val_age, reference=lgb_train_age, feature_name=feature_columns, categorical_feature=categorical_feature)
 
 
 # %%
@@ -52,7 +58,6 @@ def LGBM_gender():
         'task': 'train',
         'boosting_type': 'gbdt',
         'objective': 'binary',
-        # 'num_class': 2,            # 多分类类别
         'metric': 'binary_logloss',  # evaluate指标
         'max_depth': -1,             # 不限制树深度
         'num_leaves': 31,
@@ -93,6 +98,7 @@ def LGBM_age(num_leaves):
 
         'metric': {'multi_logloss', 'multi_error'},
         'learning_rate': 0.1,
+
         # 'feature_fraction': 0.9,
         # 'bagging_fraction': 0.8,
         # 'bagging_freq': 5,
@@ -142,7 +148,7 @@ def LGBM_age(num_leaves):
 
 
 # %%
-for leaves in range(8, 18):
+for leaves in range(16, 18):
     gbm_age = LGBM_age(leaves)
     y_pred_probability = gbm_age.predict(
         X_val, num_iteration=gbm_age.best_iteration)
