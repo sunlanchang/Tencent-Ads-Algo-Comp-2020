@@ -25,9 +25,9 @@
 
 # 数据
 
-给定的三个训练数据文件的关系如下：
+给定的三个训练数据文件`user.csv ad.csv click_log.csv`的文件和外键关系如下：
 
 ![](img/TAAC2020.png)
 
 # 使用
-把`process_data.ipynb`中的数据路径修改一下即可
+- `process_data.ipynb`将三个文件按照外键合并成一个文件，把`process_data.ipynb`中的数据路径修改一下即可。
