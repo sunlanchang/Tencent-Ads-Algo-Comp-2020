@@ -122,45 +122,67 @@ def LGBM_age():
 
 # %%
 # gbm_gender = LGBM_gender()
-
-# %%
-# gbm_gender = LGBM_gender()
 # gbm_age = LGBM_age()
 gbm_gender = lgb.Booster(model_file='tmp/model_gender.txt')
 gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
 
+
 # %%
-# if __name__ == "__main__":
-print('Starting predicting...')
-y_pred_gender_probability = gbm_gender.predict(
-    X_val, num_iteration=gbm_gender.best_iteration)
-threshold = 0.5
-y_pred_gender = np.where(y_pred_gender_probability > threshold, 1, 0)
-# eval
-print('threshold: {:.1f} The accuracy of prediction is:{:.2f}'.format(threshold,
-                                                                      accuracy_score(y_val_gender, y_pred_gender)))
+def evaluate():
+    print('Starting predicting...')
+    y_pred_gender_probability = gbm_gender.predict(
+        X_val, num_iteration=gbm_gender.best_iteration)
+    threshold = 0.5
+    y_pred_gender = np.where(y_pred_gender_probability > threshold, 1, 0)
+    # eval
+    print('threshold: {:.1f} The accuracy of prediction is:{:.2f}'.format(threshold,
+                                                                          accuracy_score(y_val_gender, y_pred_gender)))
+    # %%
+    print('Starting evaluate data predicting...')
+    y_pred_age_probability = gbm_age.predict(
+        X_val, num_iteration=gbm_age.best_iteration)
+    y_pred_age = np.argmax(y_pred_age_probability, axis=1)
+    # eval
+    print('The accuracy of prediction is:{:.2f}'.format(
+        accuracy_score(y_val_age, y_pred_age)))
+
+    d = {'user_id': X_val.user_id.values.tolist(), 'gender': y_pred_gender.tolist(),
+         'age': y_pred_age.tolist()}
+    ans_df = pd.DataFrame(data=d)
+    # 投票的方式决定gender、age
+    ans_df_grouped = ans_df.groupby(['user_id']).agg(
+        lambda x: x.value_counts().index[0])
+    ans_df_grouped.gender = ans_df_grouped.gender+1
+    ans_df_grouped.age = ans_df_grouped.age+1
+    ans_df_grouped.to_csv('data/ans.csv', header=True)
+
+
 # %%
-print('Starting predicting...')
-y_pred_age_probability = gbm_age.predict(
-    X_val, num_iteration=gbm_age.best_iteration)
-threshold = 0.5
-y_pred_age = np.argmax(y_pred_age_probability, axis=1)
-# eval
-print('The accuracy of prediction is:{:.2f}'.format(
-    accuracy_score(y_val_age, y_pred_age)))
-# %%
-d = {'user_id': X_val.user_id.values.tolist(), 'gender': y_pred_gender.tolist(),
-     'age': y_pred_age.tolist()}
-ans_df = pd.DataFrame(data=d)
-# 投票的方式决定gender、age
-ans_df_grouped = ans_df.groupby(['user_id']).agg(
-    lambda x: x.value_counts().index[0])
-ans_df_grouped.gender = ans_df_grouped.gender+1
-ans_df_grouped.age = ans_df_grouped.age+1
-ans_df_grouped.to_csv('data/ans.csv', header=True, index=False)
-# userid = np.hstack((np.array(X_val.user_id).reshape(
-#     (X_val.user_id.shape[0], 1)), y_pred_gender))
-# userid_gender = np.hstack((userid, y_pred_gender))
+def test():
+    print('Starting test gender data predicting...')
+    y_pred_gender_probability = gbm_gender.predict(
+        X_test, num_iteration=gbm_gender.best_iteration)
+    threshold = 0.5
+    y_pred_gender = np.where(y_pred_gender_probability > threshold, 1, 0)
+
+    print('Starting test age data predicting...')
+    y_pred_age_probability = gbm_age.predict(
+        X_test, num_iteration=gbm_age.best_iteration)
+    y_pred_age = np.argmax(y_pred_age_probability, axis=1)
+
+    print('perform voting...')
+    d = {'user_id': X_test.user_id.values.tolist(),
+         'age': y_pred_age.tolist(),
+         'gender': y_pred_gender.tolist(),
+         }
+    ans_df = pd.DataFrame(data=d)
+    # 投票的方式决定gender、age
+    ans_df_grouped = ans_df.groupby(['user_id']).agg(
+        lambda x: x.value_counts().index[0])
+    ans_df_grouped.gender = ans_df_grouped.gender+1
+    ans_df_grouped.age = ans_df_grouped.age+1
+    ans_df_grouped.to_csv('data/ans_test.csv', header=True)
+    print('Done!!!')
 
 # %%
 # for leaves in range(10, 13):
@@ -176,3 +198,4 @@ ans_df_grouped.to_csv('data/ans.csv', header=True, index=False)
 
 
 # %%
+test()
