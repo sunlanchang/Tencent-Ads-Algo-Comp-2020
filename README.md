@@ -3,6 +3,7 @@
 
 # TODO
 
+- [ ] 传统机器学习如随机森林、决策树、SVM等
 - [x] LightGBM+Voting
 - [ ] LightGBM+LightGBM
 - [ ] LightGBM+RNN
