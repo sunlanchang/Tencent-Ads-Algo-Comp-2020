@@ -31,7 +31,7 @@
 
 ![](img/TAAC2020.png)
 
-# 使用
+# 获得训练数据
 - `process_data.ipynb`将三个文件按照外键合并成一个文件，把`process_data.ipynb`中的数据路径修改一下即可。
 
 合并之后的数据：
