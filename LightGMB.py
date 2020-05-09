@@ -58,15 +58,15 @@ def LGBM_gender():
         'task': 'train',
         'boosting_type': 'gbdt',
         'objective': 'binary',
-        'metric': 'binary_logloss',  # evaluate指标
+        'metric': {'binary_logloss', 'binary_error'},  # evaluate指标
         'max_depth': -1,             # 不限制树深度
-        'num_leaves': 31,
+        'num_leaves': 2**8,
         'min_data_in_leaf': 1,
         'learning_rate': 0.1,
         # 'feature_fraction': 0.9,
         # 'bagging_fraction': 0.8,
         # 'bagging_freq': 5,
-        'is_provide_training_metric': True,
+        # 'is_provide_training_metric': True,
         'verbose': 1
     }
     print('Starting training...')
@@ -86,13 +86,13 @@ def LGBM_gender():
 
 
 # %%
-def LGBM_age(num_leaves):
+def LGBM_age():
     params_age = {
         'boosting_type': 'gbdt',
         'objective': 'multiclass',
         "num_class": 10,
         # fine-tuning最重要的三个参数
-        'num_leaves': 2**num_leaves-1,
+        'num_leaves': 2**8-1,
         'max_depth': -1,             # 不限制树深度
         'min_data_in_leaf': 1,
 
@@ -108,7 +108,7 @@ def LGBM_age(num_leaves):
     # train
     gbm = lgb.train(params_age,
                     lgb_train_age,
-                    num_boost_round=10,
+                    num_boost_round=50,
                     valid_sets=lgb_eval_age,
                     # early_stopping_rounds=5,
                     )
@@ -124,40 +124,55 @@ def LGBM_age(num_leaves):
 # gbm_gender = LGBM_gender()
 
 # %%
+# gbm_gender = LGBM_gender()
 # gbm_age = LGBM_age()
+gbm_gender = lgb.Booster(model_file='tmp/model_gender.txt')
+gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
 
 # %%
 # if __name__ == "__main__":
-# print('Starting predicting...')
-# y_pred_probability = gbm_gender.predict(
-#     X_val, num_iteration=gbm_gender.best_iteration)
-# threshold = 0.5
-# y_pred = np.where(y_pred_probability > threshold, 1, 0)
-# # eval
-# print('threshold: {:.1f} The accuracy of prediction is:{:.2f}'.format(threshold,
-    #   accuracy_score(y_val_gender, y_pred)))
+print('Starting predicting...')
+y_pred_gender_probability = gbm_gender.predict(
+    X_val, num_iteration=gbm_gender.best_iteration)
+threshold = 0.5
+y_pred_gender = np.where(y_pred_gender_probability > threshold, 1, 0)
+# eval
+print('threshold: {:.1f} The accuracy of prediction is:{:.2f}'.format(threshold,
+                                                                      accuracy_score(y_val_gender, y_pred_gender)))
 # %%
-# print('Starting predicting...')
-# y_pred_probability = gbm_age.predict(
-#     X_val, num_iteration=gbm_age.best_iteration)
-# threshold = 0.5
-# y_pred = np.argmax(y_pred_probability, axis=1)
-# # eval
-# print('The accuracy of prediction is:{:.2f}'.format(
-#     accuracy_score(y_val_age, y_pred)))
-
+print('Starting predicting...')
+y_pred_age_probability = gbm_age.predict(
+    X_val, num_iteration=gbm_age.best_iteration)
+threshold = 0.5
+y_pred_age = np.argmax(y_pred_age_probability, axis=1)
+# eval
+print('The accuracy of prediction is:{:.2f}'.format(
+    accuracy_score(y_val_age, y_pred_age)))
+# %%
+d = {'user_id': X_val.user_id.values.tolist(), 'gender': y_pred_gender.tolist(),
+     'age': y_pred_age.tolist()}
+ans_df = pd.DataFrame(data=d)
+# 投票的方式决定gender、age
+ans_df_grouped = ans_df.groupby(['user_id']).agg(
+    lambda x: x.value_counts().index[0])
+ans_df_grouped.gender = ans_df_grouped.gender+1
+ans_df_grouped.age = ans_df_grouped.age+1
+ans_df_grouped.to_csv('data/ans.csv', header=True, index=False)
+# userid = np.hstack((np.array(X_val.user_id).reshape(
+#     (X_val.user_id.shape[0], 1)), y_pred_gender))
+# userid_gender = np.hstack((userid, y_pred_gender))
 
 # %%
-for leaves in range(16, 18):
-    gbm_age = LGBM_age(leaves)
-    y_pred_probability = gbm_age.predict(
-        X_val, num_iteration=gbm_age.best_iteration)
-    y_pred = np.argmax(y_pred_probability, axis=1)
-    print('v'*20)
-    print('leaves: ', leaves)
-    print('The accuracy of prediction is:{:.2f}'.format(
-        accuracy_score(y_val_age, y_pred)))
-    print('v'*20)
+# for leaves in range(10, 13):
+#     gbm_age = LGBM_age(leaves)
+#     y_pred_probability = gbm_age.predict(
+#         X_val, num_iteration=gbm_age.best_iteration)
+#     y_pred = np.argmax(y_pred_probability, axis=1)
+#     print('v'*20)
+#     print('leaves: ', leaves)
+#     print('The accuracy of prediction is:{:.2f}'.format(
+#         accuracy_score(y_val_age, y_pred)))
+#     print('v'*20)
 
 
 # %%
