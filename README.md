@@ -3,7 +3,7 @@
 
 # TODO
 
-- [x] LightGBM+voting
+- [x] LightGBM+Voting
 - [ ] LightGBM+LightGBM
 - [ ] LightGBM+RNN
 - [ ] RNN
@@ -37,4 +37,6 @@
 
 # 训练记录
 
-LightGBM的baseline训练10个epoch，官网提交准确率0.91
+- age和gender是随机的，官网准确率0.66
+- age和gender都为1，官网准确率0.707
+- LightGBM的baseline训练10个epoch，官网提交准确率0.91
