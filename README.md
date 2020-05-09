@@ -39,6 +39,6 @@
 
 # 训练记录
 
-- age和gender是随机的，官网准确率0.66
-- age和gender都为1，官网准确率0.707
-- LightGBM的baseline训练10个epoch，官网提交准确率0.91
+- age和gender是随机的，提交准确率0.66
+- age和gender都为1，提交准确率0.707
+- LightGBM的baseline训练10个epoch，提交准确率0.91
