@@ -50,9 +50,34 @@ lgb_train_age = lgb.Dataset(
     X_train, y_train_age, feature_name=feature_columns, categorical_feature=categorical_feature)
 lgb_eval_age = lgb.Dataset(
     X_val, y_val_age, reference=lgb_train_age, feature_name=feature_columns, categorical_feature=categorical_feature)
+# %%
+# write to hdf5 to read fast
+X_train.to_hdf('data/clicklog_ad_user.h5', key='X_train', mode='w')
+y_train_gender.to_hdf('data/clicklog_ad_user.h5',
+                      key='y_train_gender', mode='a')
+y_train_age.to_hdf('data/clicklog_ad_user.h5', key='y_train_age', mode='a')
+X_val.to_hdf('data/clicklog_ad_user.h5', key='X_val', mode='a')
+y_val_gender.to_hdf('data/clicklog_ad_user.h5', key='y_val_gender', mode='a')
+y_val_age.to_hdf('data/clicklog_ad_user.h5', key='y_val_age', mode='a')
+X_test.to_hdf('data/clicklog_ad_user.h5', key='X_test', mode='a')
 
 
 # %%
+# read from hdf5
+X_train = pd.read_hdf('data/clicklog_ad_user.h5', key='X_train', mode='r')
+y_train_gender = pd.read_hdf('data/clicklog_ad_user.h5',
+                             key='y_train_gender', mode='r')
+y_train_age = pd.read_hdf('data/clicklog_ad_user.h5',
+                          key='y_train_age', mode='r')
+X_val = pd.read_hdf('data/clicklog_ad_user.h5', key='X_val', mode='r')
+y_val_gender = pd.read_hdf('data/clicklog_ad_user.h5',
+                           key='y_val_gender', mode='r')
+y_val_age = pd.read_hdf('data/clicklog_ad_user.h5', key='y_val_age', mode='r')
+X_test = pd.read_hdf('data/clicklog_ad_user.h5', key='X_test', mode='r')
+
+# %%
+
+
 def LGBM_gender():
     params_gender = {
         'task': 'train',
@@ -126,7 +151,7 @@ def LGBM_age():
 
 # %%
 gbm_gender = LGBM_gender()
-# gbm_age = LGBM_age()
+gbm_age = LGBM_age()
 # gbm_gender = lgb.Booster(model_file='tmp/model_gender.txt')
 # gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
 
@@ -142,24 +167,25 @@ def evaluate():
     print('threshold: {:.1f} The accuracy of prediction is:{:.2f}'.format(threshold,
                                                                           accuracy_score(y_val_gender, y_pred_gender)))
     # %%
-    # print('Start evaluate data predicting...')
-    # y_pred_age_probability = gbm_age.predict(
-    #     X_val, num_iteration=gbm_age.best_iteration)
-    # y_pred_age = np.argmax(y_pred_age_probability, axis=1)
-    # # eval
-    # print('The accuracy of prediction is:{:.2f}'.format(
-    #     accuracy_score(y_val_age, y_pred_age)))
+    print('Start evaluate data predicting...')
+    y_pred_age_probability = gbm_age.predict(
+        X_val, num_iteration=gbm_age.best_iteration)
+    y_pred_age = np.argmax(y_pred_age_probability, axis=1)
+    # eval
+    print('The accuracy of prediction is:{:.2f}'.format(
+        accuracy_score(y_val_age, y_pred_age)))
+
+    d = {'user_id': X_val.user_id.values.tolist(), 'gender': y_pred_gender.tolist(),
+         'age': y_pred_age.tolist()}
+    ans_df = pd.DataFrame(data=d)
+    # 投票的方式决定gender、age
+    ans_df_grouped = ans_df.groupby(['user_id']).agg(
+        lambda x: x.value_counts().index[0])
+    ans_df_grouped.gender = ans_df_grouped.gender+1
+    ans_df_grouped.age = ans_df_grouped.age+1
+    ans_df_grouped.to_csv('data/ans.csv', header=True)
 
 
-    # d = {'user_id': X_val.user_id.values.tolist(), 'gender': y_pred_gender.tolist(),
-    #      'age': y_pred_age.tolist()}
-    # ans_df = pd.DataFrame(data=d)
-    # # 投票的方式决定gender、age
-    # ans_df_grouped = ans_df.groupby(['user_id']).agg(
-    #     lambda x: x.value_counts().index[0])
-    # ans_df_grouped.gender = ans_df_grouped.gender+1
-    # ans_df_grouped.age = ans_df_grouped.age+1
-    # ans_df_grouped.to_csv('data/ans.csv', header=True)
 # %%
 evaluate()
 # %%

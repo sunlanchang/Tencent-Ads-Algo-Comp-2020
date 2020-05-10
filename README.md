@@ -28,6 +28,7 @@
 # 数据
 
 给定的三个训练数据文件`user.csv ad.csv click_log.csv`的文件和外键关系如下：
+- `ad.csv`中一个素材id只能对应一个广告id，一个广告id对应多个素材id
 
 ![](img/TAAC2020.png)
 
