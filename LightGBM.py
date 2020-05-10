@@ -60,9 +60,12 @@ def LGBM_gender():
         'objective': 'binary',
         'metric': {'binary_logloss', 'binary_error'},  # evaluate指标
         'max_depth': -1,             # 不限制树深度
+        # 更高的accuracy
+        'max_bin': 2**10-1,
+
         'num_leaves': 2**10,
         'min_data_in_leaf': 1,
-        'learning_rate': 0.1,
+        'learning_rate': 0.01,
         # 'feature_fraction': 0.9,
         # 'bagging_fraction': 0.8,
         # 'bagging_freq': 5,
@@ -73,7 +76,7 @@ def LGBM_gender():
     # train
     gbm = lgb.train(params_gender,
                     lgb_train_gender,
-                    num_boost_round=50,
+                    num_boost_round=10,
                     valid_sets=lgb_eval_gender,
                     # early_stopping_rounds=5,
                     )
@@ -95,6 +98,8 @@ def LGBM_age():
         'num_leaves': 2**10-1,
         'max_depth': -1,             # 不限制树深度
         'min_data_in_leaf': 1,
+        # 更高的accuracy
+        # 'max_bin': 2**9-1,
 
         'metric': {'multi_logloss', 'multi_error'},
         'learning_rate': 0.1,
@@ -120,10 +125,10 @@ def LGBM_age():
 
 
 # %%
-# gbm_gender = LGBM_gender()
+gbm_gender = LGBM_gender()
 # gbm_age = LGBM_age()
-gbm_gender = lgb.Booster(model_file='tmp/model_gender.txt')
-gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
+# gbm_gender = lgb.Booster(model_file='tmp/model_gender.txt')
+# gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
 
 
 # %%
@@ -137,26 +142,29 @@ def evaluate():
     print('threshold: {:.1f} The accuracy of prediction is:{:.2f}'.format(threshold,
                                                                           accuracy_score(y_val_gender, y_pred_gender)))
     # %%
-    print('Start evaluate data predicting...')
-    y_pred_age_probability = gbm_age.predict(
-        X_val, num_iteration=gbm_age.best_iteration)
-    y_pred_age = np.argmax(y_pred_age_probability, axis=1)
-    # eval
-    print('The accuracy of prediction is:{:.2f}'.format(
-        accuracy_score(y_val_age, y_pred_age)))
-
-    d = {'user_id': X_val.user_id.values.tolist(), 'gender': y_pred_gender.tolist(),
-         'age': y_pred_age.tolist()}
-    ans_df = pd.DataFrame(data=d)
-    # 投票的方式决定gender、age
-    ans_df_grouped = ans_df.groupby(['user_id']).agg(
-        lambda x: x.value_counts().index[0])
-    ans_df_grouped.gender = ans_df_grouped.gender+1
-    ans_df_grouped.age = ans_df_grouped.age+1
-    ans_df_grouped.to_csv('data/ans.csv', header=True)
+    # print('Start evaluate data predicting...')
+    # y_pred_age_probability = gbm_age.predict(
+    #     X_val, num_iteration=gbm_age.best_iteration)
+    # y_pred_age = np.argmax(y_pred_age_probability, axis=1)
+    # # eval
+    # print('The accuracy of prediction is:{:.2f}'.format(
+    #     accuracy_score(y_val_age, y_pred_age)))
 
 
+    # d = {'user_id': X_val.user_id.values.tolist(), 'gender': y_pred_gender.tolist(),
+    #      'age': y_pred_age.tolist()}
+    # ans_df = pd.DataFrame(data=d)
+    # # 投票的方式决定gender、age
+    # ans_df_grouped = ans_df.groupby(['user_id']).agg(
+    #     lambda x: x.value_counts().index[0])
+    # ans_df_grouped.gender = ans_df_grouped.gender+1
+    # ans_df_grouped.age = ans_df_grouped.age+1
+    # ans_df_grouped.to_csv('data/ans.csv', header=True)
 # %%
+evaluate()
+# %%
+
+
 def test():
     print('Start predicting test gender data ...')
     y_pred_gender_probability = gbm_gender.predict(
