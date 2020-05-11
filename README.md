@@ -8,6 +8,7 @@
 - [x] LightGBM+Voting
 - [x] ~~LightGBM+LightGBM~~(not work)
 - [x] ~~LightGBM+RNN~~(not work)
+- [ ] DeepFM、DeepFFM
 - [ ] RNN
 - [ ] GNN
 - [ ] 集成学习
@@ -33,6 +34,9 @@
 ![](img/TAAC2020.png)
 
 测试集和训练集中ad.csv中：相同的ID占比：
+```python
+len(set(ad_test.advertiser_id.values.tolist()) & set(ad_train.advertiser_id.values.tolist()))/len(set(ad_test.advertiser_id.values.tolist()) | set(ad_train.advertiser_id.values.tolist()))
+```
 - `product_id`: 0.73
 - `creative_id`: 0.49
 - `product_category`: 1.0
