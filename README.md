@@ -25,12 +25,19 @@
 └── tmp
 ```
 
-# 数据
+# 数据探索
 
 给定的三个训练数据文件`user.csv ad.csv click_log.csv`的文件和外键关系如下：
 - `ad.csv`中一个素材id只能对应一个广告id，一个广告id对应多个素材id
 
 ![](img/TAAC2020.png)
+
+测试集和训练集中ad.csv中：相同的ID占比：
+- `product_id`: 0.73
+- `creative_id`: 0.49
+- `product_category`: 1.0
+- `advertiser_id`: 0.81
+- `industry`: 0.96
 
 # 获得训练数据
 - `process_data.ipynb`将三个文件按照外键合并成一个文件，把`process_data.ipynb`中的数据路径修改一下即可。
