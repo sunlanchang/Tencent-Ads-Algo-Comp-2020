@@ -71,11 +71,13 @@ NLP中常用的做法，将用户点击序列中的creative_id或者ad_id集合�
 ```python
 len(set(ad_test.advertiser_id.values.tolist()) & set(ad_train.advertiser_id.values.tolist()))/len(set(ad_test.advertiser_id.values.tolist()) | set(ad_train.advertiser_id.values.tolist()))
 ```
-- `product_id`: 0.73
-- `creative_id`: 0.49
-- `product_category`: 1.0
-- `advertiser_id`: 0.81
-- `industry`: 0.96
+```
+- product_id: 0.73
+- creative_id: 0.49
+- product_category: 1.0
+- advertiser_id: 0.81
+- industry: 0.96
+```
 
 - 训练集用户id最小值和最大值：(1, 900000)
 - 测试集用户id最小值和最大值：(3000001, 4000000)
