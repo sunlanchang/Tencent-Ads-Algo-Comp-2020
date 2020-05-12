@@ -4,11 +4,11 @@
 # TODO
 
 - [ ] 传统机器学习如随机森林、决策树、SVM、朴素贝叶斯、贝叶斯网络、逻辑回归、AdaBoost等
-- [ ] 全连接网络
+- [ ] 全连接网络: Dense
 - [x] LightGBM+Voting
-- [x] ~~LightGBM+LightGBM~~(not work)
-- [x] ~~LightGBM+RNN~~(not work)
-- [ ] RNN
+- [x] ~~LightGBM+LightGBM~~(目测not work)
+- [x] ~~LightGBM+RNN~~(目测not work)
+- [ ] 处理成序列问题使用RNN等序列模型
 - [ ] TF-IDF
 - [ ] DeepFM、DeepFFM
 - [ ] GNN
@@ -16,7 +16,7 @@
 
 ## 传统机器学习
 
-随机森林：0.89
+- 随机森林：0.89
 
 ## 处理成序列问题
 
@@ -28,9 +28,17 @@
 
 NLP中常用的做法，将用户点击序列中的creative_id或者ad_id集合看作一篇文档，将每个creative_id或者ad_id视为文档中的文字，然后使用tfidf。当然这也下来维度也非常高，可以通过参数调整来降低维度，比如sklearn中的TfidfVectorizer，可以使用max_df和min_df进行调整。
 
+## DeepFM、DeepFFM、xDeepFM
+
+推荐系统常用架构。
+
 ## GNN
 
 将用户的访问记录看作图，利用图神经网络提取user_id、creative_id、ad_id等的Embedding，利用提取的Embedding输入下游模型，或者将访问记录看作序列输入序列模型。
+
+## 集成学习
+
+最终融合多个模型使用。
 
 # 代码介绍
 
