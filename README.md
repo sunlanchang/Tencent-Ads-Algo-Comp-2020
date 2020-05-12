@@ -8,7 +8,7 @@
 - [x] LightGBM+Voting(accuracy: 0.91)
 - [x] ~~LightGBM+LightGBM~~(目测not work)
 - [x] ~~LightGBM+RNN~~(目测not work)
-- [ ] 处理成序列问题使用RNN等序列模型
+- [ ] 处理成序列问题后使用RNN等序列模型
 - [ ] TF-IDF
 - [ ] DeepFM、DeepFFM
 - [ ] GNN
@@ -69,6 +69,10 @@ len(set(ad_test.advertiser_id.values.tolist()) & set(ad_train.advertiser_id.valu
 - `product_category`: 1.0
 - `advertiser_id`: 0.81
 - `industry`: 0.96
+
+- 训练集用户id最小值和最大值：(1, 900000)
+- 测试集用户id最小值和最大值：(3000001, 4000000)
+- 测试集和训练集共有用户：1900000
 
 # 获得训练数据
 - `process_data.ipynb`将三个文件按照外键合并成一个文件，把`process_data.ipynb`中的数据路径修改一下即可。
