@@ -170,23 +170,22 @@ def LGBM_age():
 
 
 # %%
-gbm_gender = LGBM_gender()
-gbm_age = LGBM_age()
-# gbm_gender = lgb.Booster(model_file='tmp/model_gender.txt')
-# gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
+# gbm_gender = LGBM_gender()
+# gbm_age = LGBM_age()
+gbm_gender = lgb.Booster(model_file='tmp/model_gender.txt')
+gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
 
 
 # %%
 def evaluate():
-    print('Start predicting...')
-    y_pred_gender_probability = gbm_gender.predict(
-        X_val, num_iteration=gbm_gender.best_iteration)
-    threshold = 0.5
-    y_pred_gender = np.where(y_pred_gender_probability > threshold, 1, 0)
-    # eval
-    print('threshold: {:.1f} The accuracy of prediction is:{:.2f}'.format(threshold,
-                                                                          accuracy_score(y_val_gender, y_pred_gender)))
-    # %%
+    # print('Start predicting...')
+    # y_pred_gender_probability = gbm_gender.predict(
+    #     X_val, num_iteration=gbm_gender.best_iteration)
+    # threshold = 0.5
+    # y_pred_gender = np.where(y_pred_gender_probability > threshold, 1, 0)
+    # # eval
+    # print('threshold: {:.1f} The accuracy of prediction is:{:.2f}'.format(threshold,
+                                                                        #   accuracy_score(y_val_gender, y_pred_gender)))
     print('Start evaluate data predicting...')
     y_pred_age_probability = gbm_age.predict(
         X_val, num_iteration=gbm_age.best_iteration)

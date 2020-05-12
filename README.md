@@ -8,10 +8,29 @@
 - [x] LightGBM+Voting
 - [x] ~~LightGBM+LightGBM~~(not work)
 - [x] ~~LightGBM+RNN~~(not work)
-- [ ] DeepFM、DeepFFM
 - [ ] RNN
+- [ ] TF-IDF
+- [ ] DeepFM、DeepFFM
 - [ ] GNN
 - [ ] 集成学习
+
+## 传统机器学习
+
+随机森林：0.89
+
+## 处理成序列问题
+
+把每个点击的creative_id或者ad_id当作一个词，把一个人90天内点击的creative_id或者ad_id列表当作一个句子，使用word2vec来构造creative_id或者ad_id嵌入表示。最后进行简单的统计操作得到用户的向量表示。这种序列简单聚合导致信息损失，显得是非常的粗糙，需要进一步引入attention等方法。
+
+上述方法可以直接使用传统的GBDT相关模型进行，1.3应该没问题。下面可以考虑序列建模方式。例如RNN/LSTM/GRU，这类方法将用户行为看做一个序列，套用NLP领域常用的RNN/LSTM/GRU方法来进行建模。
+
+## TF-IDF
+
+NLP中常用的做法，将用户点击序列中的creative_id或者ad_id集合看作一篇文档，将每个creative_id或者ad_id视为文档中的文字，然后使用tfidf。当然这也下来维度也非常高，可以通过参数调整来降低维度，比如sklearn中的TfidfVectorizer，可以使用max_df和min_df进行调整。
+
+## GNN
+
+将用户的访问记录看作图，利用图神经网络提取用户、广告等的Embedding，利用提取的Embedding输入下游模型。
 
 # 代码介绍
 
