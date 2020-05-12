@@ -27,10 +27,12 @@ with open('word2vec/userid_creativeids.txt', 'w')as f:
         f.write(line+'\n')
 # %%
 sentences = LineSentence('word2vec/userid_creativeids.txt')
-model = Word2Vec(sentences, size=128, window=3, min_count=1, workers=-1)
+dimension_embedding = 128
+model = Word2Vec(sentences, size=dimension_embedding,
+                 window=3, min_count=1, workers=-1)
 model.save("word2vec/word2vec.model")
 path = "word2vec/wordvectors.kv"
 model.wv.save(path)
 wv = KeyedVectors.load(path, mmap='r')
 # %%
-vector = wv['1']  # numpy vector of a word
+vector = wv['1']  # creative_id为1的词嵌入，128维度
