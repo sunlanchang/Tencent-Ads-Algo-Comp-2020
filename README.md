@@ -7,16 +7,16 @@
 - [ ] 直接对category feature和numeric feature使用全连接网络
 - [x] LightGBM
     - [x] +Voting(accuracy: 0.91)
-    - [x] ~~+LightGBM~~(目测not work)
-    - [x] ~~+RNN~~(目测not work)
+    - [x] +LightGBM(目测not work)
+    - [x] +RNN(目测not work)
 - [ ] 处理成序列问题后，使用word2vec生成词嵌入后
-    - [ ] 使用Dense
-    - [ ] 使用RNN等序列模型
-    - [ ] 使用LightGBM
+    - [ ] +Dense
+    - [ ] +RNN等序列模型
+    - [ ] +LightGBM
 - [ ] GNN生成user_id creative_id ad_id等的词嵌入后分类
-    - [ ] 使用Dense
-    - [ ] 使用RNN等序列模型
-    - [ ] 使用LightGBM
+    - [ ] +Dense
+    - [ ] +RNN等序列模型
+    - [ ] +LightGBM
 - [ ] TF-IDF
 - [ ] DeepFM、DeepFFM等
 - [ ] 集成学习：比赛最后阶段使用上分
