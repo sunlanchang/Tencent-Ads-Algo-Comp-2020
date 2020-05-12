@@ -13,9 +13,9 @@
     - [ ] 使用RNN等序列模型
     - [ ] 使用LightGBM
 - [ ] GNN生成user_id creative_id ad_id等的词嵌入后分类
-    - 使用Dense
-    - 使用RNN等序列模型
-    - 使用LightGBM
+    - [ ] 使用Dense
+    - [ ] 使用RNN等序列模型
+    - [ ] 使用LightGBM
 - [ ] TF-IDF
 - [ ] DeepFM、DeepFFM等
 - [ ] 集成学习：比赛最后阶段使用上分
