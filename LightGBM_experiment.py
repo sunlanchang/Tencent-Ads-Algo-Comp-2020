@@ -178,31 +178,58 @@ gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
 
 # %%
 def evaluate():
-    # print('Start predicting...')
-    # y_pred_gender_probability = gbm_gender.predict(
-    #     X_val, num_iteration=gbm_gender.best_iteration)
-    # threshold = 0.5
-    # y_pred_gender = np.where(y_pred_gender_probability > threshold, 1, 0)
-    # # eval
-    # print('threshold: {:.1f} The accuracy of prediction is:{:.2f}'.format(threshold,
+    print('Start predicting...')
+    y_pred_gender_probability = gbm_gender.predict(
+        X_val, num_iteration=gbm_gender.best_iteration)
+    threshold = 0.5
+    y_pred_gender = np.where(y_pred_gender_probability > threshold, 1, 0)
+    # eval
+    print('threshold: {:.1f} The accuracy of prediction is:{:.2f}'.format(threshold,
                                                                         #   accuracy_score(y_val_gender, y_pred_gender)))
     print('Start evaluate data predicting...')
-    y_pred_age_probability = gbm_age.predict(
+    y_pred_age_probability=gbm_age.predict(
         X_val, num_iteration=gbm_age.best_iteration)
-    y_pred_age = np.argmax(y_pred_age_probability, axis=1)
+    y_pred_age=np.argmax(y_pred_age_probability, axis=1)
     # eval
     print('The accuracy of prediction is:{:.2f}'.format(
         accuracy_score(y_val_age, y_pred_age)))
 
-    # d = {'user_id': X_val.user_id.values.tolist(), 'gender': y_pred_gender.tolist(),
-    #      'age': y_pred_age.tolist()}
-    # ans_df = pd.DataFrame(data=d)
-    # # 投票的方式决定gender、age
-    # ans_df_grouped = ans_df.groupby(['user_id']).agg(
-    #     lambda x: x.value_counts().index[0])
-    # ans_df_grouped.gender = ans_df_grouped.gender+1
-    # ans_df_grouped.age = ans_df_grouped.age+1
-    # ans_df_grouped.to_csv('data/ans_eval.csv', header=True)
+    d={'user_id': X_val.user_id.values.tolist(), 'gender': y_pred_gender.tolist(),
+         'age': y_pred_age.tolist()}
+    ans_df=pd.DataFrame(data=d)
+    # 投票的方式决定gender、age
+    ans_df_grouped=ans_df.groupby(['user_id']).agg(
+        lambda x: x.value_counts().index[0])
+    ans_df_grouped.gender=ans_df_grouped.gender+1
+    ans_df_grouped.age=ans_df_grouped.age+1
+    ans_df_grouped.to_csv('data/ans_eval.csv', header=True)
+
+def evaluate_generate_train_label():
+    print('Start predicting...')
+    y_pred_gender_probability=gbm_gender.predict(
+        X_val, num_iteration=gbm_gender.best_iteration)
+    threshold=0.5
+    y_pred_gender=np.where(y_pred_gender_probability > threshold, 1, 0)
+    # eval
+    print('threshold: {:.1f} The accuracy of prediction is:{:.2f}'.format(threshold,
+                                                                        #   accuracy_score(y_val_gender, y_pred_gender)))
+    print('Start evaluate data predicting...')
+    y_pred_age_probability=gbm_age.predict(
+        X_val, num_iteration=gbm_age.best_iteration)
+    y_pred_age=np.argmax(y_pred_age_probability, axis=1)
+    # eval
+    print('The accuracy of prediction is:{:.2f}'.format(
+        accuracy_score(y_val_age, y_pred_age)))
+
+    d={'user_id': X_val.user_id.values.tolist(), 'gender': y_pred_gender.tolist(),
+         'age': y_pred_age.tolist()}
+    ans_df=pd.DataFrame(data=d)
+    # 投票的方式决定gender、age
+    ans_df_grouped=ans_df.groupby(['user_id']).agg(
+        lambda x: x.value_counts().index[0])
+    ans_df_grouped.gender=ans_df_grouped.gender+1
+    ans_df_grouped.age=ans_df_grouped.age+1
+    ans_df_grouped.to_csv('data/ans_eval.csv', header=True)
 
 
 # %%
@@ -212,29 +239,29 @@ evaluate()
 
 def test():
     print('Start predicting test gender data ...')
-    y_pred_gender_probability = gbm_gender.predict(
+    y_pred_gender_probability=gbm_gender.predict(
         X_test, num_iteration=gbm_gender.best_iteration)
-    threshold = 0.5
-    y_pred_gender = np.where(y_pred_gender_probability > threshold, 1, 0)
+    threshold=0.5
+    y_pred_gender=np.where(y_pred_gender_probability > threshold, 1, 0)
 
     print('Start predicting test age data ...')
-    y_pred_age_probability = gbm_age.predict(
+    y_pred_age_probability=gbm_age.predict(
         X_test, num_iteration=gbm_age.best_iteration)
-    y_pred_age = np.argmax(y_pred_age_probability, axis=1)
+    y_pred_age=np.argmax(y_pred_age_probability, axis=1)
 
     print('start voting...')
-    d = {'user_id': X_test.user_id.values.tolist(),
+    d={'user_id': X_test.user_id.values.tolist(),
          'predicted_age': y_pred_age.tolist(),
          'predicted_gender': y_pred_gender.tolist(),
          }
-    ans_df = pd.DataFrame(data=d)
+    ans_df=pd.DataFrame(data=d)
     # 投票的方式决定gender、age
-    ans_df_grouped = ans_df.groupby(['user_id']).agg(
+    ans_df_grouped=ans_df.groupby(['user_id']).agg(
         lambda x: x.value_counts().index[0])
-    ans_df_grouped['user_id'] = ans_df_grouped.index
-    ans_df_grouped.gender = ans_df_grouped.gender+1
-    ans_df_grouped.age = ans_df_grouped.age+1
-    columns_order = ['user_id', 'predicted_age', 'predicted_gender']
+    ans_df_grouped['user_id']=ans_df_grouped.index
+    ans_df_grouped.gender=ans_df_grouped.gender+1
+    ans_df_grouped.age=ans_df_grouped.age+1
+    columns_order=['user_id', 'predicted_age', 'predicted_gender']
     ans_df_grouped[columns_order].to_csv(
         'data/ans_test.csv', header=True, columns=['user_id', 'predicted_age', 'predicted_gender'], index=False)
     print('Done!!!')

@@ -7,7 +7,8 @@ from sklearn.metrics import accuracy_score
 # %%
 print('Loading all data...')
 start = time.time()
-all_train_data = pd.read_csv('data/train_preliminary/clicklog_ad_user.csv')
+all_train_data = pd.read_csv(
+    'data/train_preliminary/clicklog_ad_user_train_eval_test.csv')
 df_test = pd.read_csv('data/test/clicklog_ad.csv')
 print('Split data into train and validation...')
 TRAIN_DATA_PERCENT = 0.9
@@ -52,28 +53,37 @@ lgb_eval_age = lgb.Dataset(
     X_val, y_val_age, reference=lgb_train_age, feature_name=feature_columns, categorical_feature=categorical_feature)
 # %%
 # write to hdf5 to read fast
-X_train.to_hdf('data/clicklog_ad_user.h5', key='X_train', mode='w')
-y_train_gender.to_hdf('data/clicklog_ad_user.h5',
+X_train.to_hdf('data/clicklog_ad_user_train_eval_test.h5',
+               key='X_train', mode='w')
+y_train_gender.to_hdf('data/clicklog_ad_user_train_eval_test.h5',
                       key='y_train_gender', mode='a')
-y_train_age.to_hdf('data/clicklog_ad_user.h5', key='y_train_age', mode='a')
-X_val.to_hdf('data/clicklog_ad_user.h5', key='X_val', mode='a')
-y_val_gender.to_hdf('data/clicklog_ad_user.h5', key='y_val_gender', mode='a')
-y_val_age.to_hdf('data/clicklog_ad_user.h5', key='y_val_age', mode='a')
-X_test.to_hdf('data/clicklog_ad_user.h5', key='X_test', mode='a')
+y_train_age.to_hdf('data/clicklog_ad_user_train_eval_test.h5',
+                   key='y_train_age', mode='a')
+X_val.to_hdf('data/clicklog_ad_user_train_eval_test.h5', key='X_val', mode='a')
+y_val_gender.to_hdf('data/clicklog_ad_user_train_eval_test.h5',
+                    key='y_val_gender', mode='a')
+y_val_age.to_hdf('data/clicklog_ad_user_train_eval_test.h5',
+                 key='y_val_age', mode='a')
+X_test.to_hdf('data/clicklog_ad_user_train_eval_test.h5',
+              key='X_test', mode='a')
 
 
 # %%
 # read from hdf5
-X_train = pd.read_hdf('data/clicklog_ad_user.h5', key='X_train', mode='r')
-y_train_gender = pd.read_hdf('data/clicklog_ad_user.h5',
+X_train = pd.read_hdf(
+    'data/clicklog_ad_user_train_eval_test.h5', key='X_train', mode='r')
+y_train_gender = pd.read_hdf('data/clicklog_ad_user_train_eval_test.h5',
                              key='y_train_gender', mode='r')
-y_train_age = pd.read_hdf('data/clicklog_ad_user.h5',
+y_train_age = pd.read_hdf('data/clicklog_ad_user_train_eval_test.h5',
                           key='y_train_age', mode='r')
-X_val = pd.read_hdf('data/clicklog_ad_user.h5', key='X_val', mode='r')
-y_val_gender = pd.read_hdf('data/clicklog_ad_user.h5',
+X_val = pd.read_hdf(
+    'data/clicklog_ad_user_train_eval_test.h5', key='X_val', mode='r')
+y_val_gender = pd.read_hdf('data/clicklog_ad_user_train_eval_test.h5',
                            key='y_val_gender', mode='r')
-y_val_age = pd.read_hdf('data/clicklog_ad_user.h5', key='y_val_age', mode='r')
-X_test = pd.read_hdf('data/clicklog_ad_user.h5', key='X_test', mode='r')
+y_val_age = pd.read_hdf(
+    'data/clicklog_ad_user_train_eval_test.h5', key='y_val_age', mode='r')
+X_test = pd.read_hdf(
+    'data/clicklog_ad_user_train_eval_test.h5', key='X_test', mode='r')
 
 # %%
 
