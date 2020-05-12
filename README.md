@@ -30,7 +30,7 @@ NLP中常用的做法，将用户点击序列中的creative_id或者ad_id集合�
 
 ## GNN
 
-将用户的访问记录看作图，利用图神经网络提取用户、广告等的Embedding，利用提取的Embedding输入下游模型。
+将用户的访问记录看作图，利用图神经网络提取user_id、creative_id、ad_id等的Embedding，利用提取的Embedding输入下游模型，或者将访问记录看作序列输入序列模型。
 
 # 代码介绍
 
