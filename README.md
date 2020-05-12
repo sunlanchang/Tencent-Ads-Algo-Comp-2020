@@ -4,15 +4,21 @@
 # TODO
 
 - [ ] 传统机器学习如随机森林、决策树、SVM、朴素贝叶斯、贝叶斯网络、逻辑回归、AdaBoost等
-- [ ] 全连接网络: Dense
+- [ ] 直接对category feature和numeric feature使用全连接网络
 - [x] LightGBM+Voting(accuracy: 0.91)
 - [x] ~~LightGBM+LightGBM~~(目测not work)
 - [x] ~~LightGBM+RNN~~(目测not work)
-- [ ] 处理成序列问题后使用RNN等序列模型
+- [ ] 处理成序列问题后，使用word2vec生成词嵌入后
+    - [ ] 使用Dense
+    - [ ] 使用RNN等序列模型
+    - [ ] 使用LightGBM
+- [ ] GNN生成user_id creative_id ad_id等的词嵌入后分类
+    - 使用Dense
+    - 使用RNN等序列模型
+    - 使用LightGBM
 - [ ] TF-IDF
-- [ ] DeepFM、DeepFFM
-- [ ] GNN
-- [ ] 集成学习
+- [ ] DeepFM、DeepFFM等
+- [ ] 集成学习：比赛最后阶段使用上分
 
 ## 传统机器学习
 
