@@ -71,10 +71,15 @@ columns = ['c'+str(i) for i in range(128)]
 data = {}
 for col_name in columns:
     data[col_name] = pd.Series([], dtype='float')
-user_embedding = pd.DataFrame(data)
+df_user_embedding = pd.DataFrame(data)
 # %%
+# debug = 0
 for user in tqdm.tqdm(range(len(seq_creative_id))):
-    df_creativeid_embedding.loc[seq_creative_id[user], :].mean()
+    user = df_creativeid_embedding.loc[seq_creative_id[user], :].mean()
+    # df_user_embedding = df_user_embedding.append(user, ignore_index=True)
+    # debug += 1
+    # if debug == 10:
+    #     break
 # debug = 0
 # frames = []
 # for creative_id in tqdm.tqdm(wv.vocab):
