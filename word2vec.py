@@ -39,11 +39,9 @@ print('Save embedding done!!!')
 path = "word2vec/wordvectors.kv"
 wv = KeyedVectors.load(path, mmap='r')
 columns = ['c'+str(i) for i in range(128)]
-# columns.append('creative_id')
 data = {}
-for col_name in columns[:-1]:
+for col_name in columns:
     data[col_name] = pd.Series([], dtype='float')
-data['creative_id'] = pd.Series([], dtype='str')
 df_creativeid_embedding = pd.DataFrame(data)
 
 # %%
@@ -53,12 +51,30 @@ for key in tqdm.tqdm(wv.vocab):
 # %%
 
 df_creativeid_embedding = pd.DataFrame.from_dict(
-    data, orient='index',                                      columns=columns)
-
+    data, orient='index',
+    columns=columns)
+# %%
+df_creativeid_embedding.to_hdf(
+    'word2vec/df_creativeid_embedding.h5',
+    key='df_creativeid_embedding', mode='w')
+# %%
+df_creativeid_embedding = pd.read_hdf(
+    'word2vec/df_creativeid_embedding.h5',
+    key='df_creativeid_embedding', mode='r')
 # %%
 with open('word2vec/userid_creativeids.txt', 'r')as f:
-    lines = f.readlines()
-
+    seq_creative_id = f.readlines()
+seq_creative_id = [[str(e) for e in line.strip().split(' ')]
+                   for line in seq_creative_id]
+# %%
+columns = ['c'+str(i) for i in range(128)]
+data = {}
+for col_name in columns:
+    data[col_name] = pd.Series([], dtype='float')
+user_embedding = pd.DataFrame(data)
+# %%
+for user in tqdm.tqdm(range(len(seq_creative_id))):
+    df_creativeid_embedding.loc[seq_creative_id[user], :].mean()
 # debug = 0
 # frames = []
 # for creative_id in tqdm.tqdm(wv.vocab):
