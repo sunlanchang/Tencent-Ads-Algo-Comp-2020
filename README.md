@@ -81,7 +81,7 @@ len(set(ad_test.advertiser_id.values.tolist()) & set(ad_train.advertiser_id.valu
 
 - 训练集用户id最小值和最大值：(1, 900000)
 - 测试集用户id最小值和最大值：(3000001, 4000000)
-- 测试集和训练集共有用户：1900000
+- 测试集和训练集共有用户：1900000，其中训练集900000，测试集1000000
 
 # 获得训练数据
 - `process_data.ipynb`将三个文件按照外键合并成一个文件，把`process_data.ipynb`中的数据路径修改一下即可。
