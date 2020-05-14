@@ -23,12 +23,13 @@ def long_time_task(i, start, end):
         df_user_embedding = df_user_embedding.append(
             user_emb, ignore_index=True)
 
-        if idx != start and (idx-start) % 500 == 0:
-            print('进程{}: {}/{}'.format(pid, idx-start, end-start))
         if idx != start and (idx-start) % 5000 == 0:
-            df_user_embedding.to_hdf(
-                '/tmp/df_user_embedding{}.h5'.format(i), key='df_user_embedding{}'.format(i), mode='w')
+            print('进程{}: {}/{}'.format(pid, idx-start, end-start))
+        if idx != start and (idx-start) % 50000 == 0:
+            pass
             # break
+    df_user_embedding.to_hdf(
+        '/tmp/df_user_embedding{}.h5'.format(i), key='df_user_embedding{}'.format(i), mode='w')
 
 
 if __name__ == '__main__':
