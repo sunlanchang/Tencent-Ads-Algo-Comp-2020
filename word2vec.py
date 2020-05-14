@@ -73,6 +73,7 @@ for col_name in columns:
     data[col_name] = pd.Series([], dtype='float')
 df_user_embedding = pd.DataFrame(data)
 # %%
+# this will take 24 hours!!!
 # debug = 0
 for user in tqdm.tqdm(range(len(seq_creative_id))):
     user_em = df_creativeid_embedding.loc[seq_creative_id[user]].mean()
