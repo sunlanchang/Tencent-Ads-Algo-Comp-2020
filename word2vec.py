@@ -2,12 +2,13 @@
 # %%
 import pandas as pd
 import numpy as np
-import tqdm
+from tqdm import tqdm
 from gensim.test.utils import datapath
 from gensim.models.word2vec import LineSentence
 from gensim.models import Word2Vec
 from gensim.models import KeyedVectors
 from gensim.test.utils import common_texts, get_tmpfile
+import pickle
 # %%
 df_train = pd.read_csv(
     'data/train_preliminary/clicklog_ad_user_train_eval_test.csv')
@@ -15,9 +16,16 @@ df_test = pd.read_csv('data/test/clicklog_ad_user_test.csv')
 columns = ['user_id', 'creative_id', 'time']
 frame = [df_train[columns], df_test[columns]]
 df_train_test = pd.concat(frame, ignore_index=True)
-# %%
 df_train_test_sorted = df_train_test.sort_values(
     ["user_id", "time"], ascending=(True, True))
+# %%
+with open('word2vec/df_train_test_sorted.pkl', 'wb') as f:
+    pickle.dump(df_train_test_sorted, f)
+# %%
+with open('word2vec/df_train_test_sorted.pkl', 'rb') as f:
+    df_train_test_sorted = pickle.load(f)
+# %%
+# 不用生成list
 userid_creative_ids = df_train_test_sorted.groupby(
     'user_id')['creative_id'].apply(list).reset_index(name='creative_ids')
 # %%
@@ -46,13 +54,13 @@ df_creativeid_embedding = pd.DataFrame(data)
 
 # %%
 data = {}
-for key in tqdm.tqdm(wv.vocab):
-    data[key] = wv[key].tolist()
+for key in tqdm(wv.vocab):
+    data[int(key)] = wv[key].tolist()
 # %%
-
 df_creativeid_embedding = pd.DataFrame.from_dict(
     data, orient='index',
     columns=columns)
+df_creativeid_embedding['creative_id'] = df_creativeid_embedding.index
 # %%
 df_creativeid_embedding.to_hdf(
     'word2vec/df_creativeid_embedding.h5',
@@ -62,10 +70,23 @@ df_creativeid_embedding = pd.read_hdf(
     'word2vec/df_creativeid_embedding.h5',
     key='df_creativeid_embedding', mode='r')
 # %%
+# 不需要读出list
 with open('word2vec/userid_creativeids.txt', 'r')as f:
     seq_creative_id = f.readlines()
 seq_creative_id = [[str(e) for e in line.strip().split(' ')]
                    for line in seq_creative_id]
+
+# %%
+userid_creativeid_embedding = pd.merge(
+    df_train_test_sorted, df_creativeid_embedding, on='creative_id', how='left')
+# %%
+userid_creativeid_embedding.to_hdf(
+    'word2vec/userid_creativeid_embedding.h5', key='userid_creativeid_embedding', mode='w')
+# %%
+userid_creativeid_embedding.drop(columns=['creative_id', 'time'], inplace=True)
+# %%
+userid_creativeid_embedding.groupby('user_id').mean().to_hdf()
+
 # %%
 columns = ['c'+str(i) for i in range(128)]
 data = {}
@@ -75,7 +96,7 @@ df_user_embedding = pd.DataFrame(data)
 # %%
 # this will take 24 hours!!!
 # debug = 0
-for user in tqdm.tqdm(range(len(seq_creative_id))):
+for user in tqdm(range(len(seq_creative_id))):
     user_em = df_creativeid_embedding.loc[seq_creative_id[user]].mean()
     # df_user_embedding = df_user_embedding.append(user_em, ignore_index=True)
     # debug += 1

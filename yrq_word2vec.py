@@ -96,27 +96,29 @@ with tqdm(total=int(len(wv.vocab))) as pbar:
         dict_embd_creativeid[key] = wv[key].tolist()
         pbar.update(1)
 # %%
-product_category_industry_tmp = pd.Series(
+creative_id_tmp = pd.Series(
     list(dict_embd_creativeid.keys())).astype(int)
+# %%
 vec_tmp = pd.Series(list(dict_embd_creativeid.values()))
-embd_product_category_industry_pd = pd.DataFrame(
-    columns=['product_category_industry', 'vec'])
-embd_product_category_industry_pd['product_category_industry'] = product_category_industry_tmp
-embd_product_category_industry_pd['vec'] = vec_tmp
-
-data_vec_product_category_tmp = pd.DataFrame(data, columns=['user_id', 'product_category']).rename(
-    {'product_category': 'product_category_industry'}, axis='columns')
+embd_creativeid_pd = pd.DataFrame(
+    columns=['creative_id', 'vec'])
+embd_creativeid_pd['creative_id'] = creative_id_tmp
+embd_creativeid_pd['vec'] = vec_tmp
+# %%
+data_vec_creative_id_tmp = pd.DataFrame(data, columns=['user_id', 'product_category']).rename(
+    {'product_category': 'creative_id'}, axis='columns')
 data_vec_industry_tmp = pd.DataFrame(data, columns=['user_id', 'industry']).rename(
-    {'industry': 'product_category_industry'}, axis='columns')
-data_vec_product_category_tmp['product_category_industry'] = data_vec_product_category_tmp['product_category_industry']+400
+    {'industry': 'creative_id'}, axis='columns')
+data_vec_creative_id_tmp['creative_id'] = data_vec_creative_id_tmp['creative_id']+400
 
 data_vec_product_category = pd.merge(
-    data_vec_product_category_tmp, embd_product_category_industry_pd, on='product_category_industry', how='left')
+    data_vec_creative_id_tmp, embd_creativeid_pd, on='creative_id', how='left')
 data_vec_industry = pd.merge(
-    data_vec_industry_tmp, embd_product_category_industry_pd, on='product_category_industry', how='left')
+    data_vec_industry_tmp, embd_creativeid_pd, on='creative_id', how='left')
 
 data_vec_tmp = pd.concat(
     [data_vec_product_category, data_vec_industry], names=['user_id', 'vec'])
+
 data_vec_list_tmp_pd = pd.DataFrame(pd.DataFrame(
     data_vec_tmp, columns=['user_id', 'vec'])['vec'].tolist())
 data_user_id_list_tmp_pd = pd.DataFrame(pd.DataFrame(
