@@ -56,8 +56,10 @@ NLP中常用的做法，将用户点击序列中的creative_id或者ad_id集合�
 ├── README.md
 ├── img
 ├── data                # 训练和测试数据
+├── word2vec            # 保存word2vec生成的向量
+├── word2vec.py         # 生成用户的embedding vector
 ├── process_data.ipynb  # 将训练集ad.csv、user.csv合并到click_log.csv，测试集中的ad.csv合并到click_log.csv
-└── tmp
+└── tmp                 # 临时文件
 ```
 
 # 数据探索
