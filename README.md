@@ -6,11 +6,11 @@
 - [x] 传统机器学习如随机森林、决策树、SVM、朴素贝叶斯、贝叶斯网络、逻辑回归、AdaBoost等
 - [ ] 直接对category feature和numeric feature使用全连接网络
 - [x] LightGBM
-    - [x] +Voting(accuracy: 0.91)
+    - [x] +Voting (accuracy: 0.91)
     - [x] +LightGBM(目测not work)
     - [x] +RNN(目测not work)
 - [x] 处理成序列问题后，使用word2vec生成词嵌入后
-    - [x] +Dense
+    - [x] +Dense (accuracy: 1.05)
     - [ ] +RNN等序列模型
     - [ ] +LightGBM
 - [ ] GNN生成user_id creative_id ad_id等的词嵌入后分类
