@@ -10,7 +10,7 @@
     - [ ] +LightGBM
     - [ ] +RNN
 - [x] 处理成序列问题后，使用word2vec生成词嵌入后
-    - [x] 3个特征+Dense (accuracy: **1.05**)
+    - [x] 3个特征+Dense (**accuracy: 1.05**)
     - [ ] 6个特征+Dense (accuracy: )
     - [ ] +RNN等序列模型
     - [x] +LightGBM (accuraty: 0.8)
