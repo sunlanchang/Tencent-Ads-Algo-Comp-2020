@@ -232,17 +232,3 @@ def test():
 
 
 test()
-# %%
-# for leaves in range(10, 13):
-#     gbm_age = LGBM_age(leaves)
-#     y_pred_probability = gbm_age.predict(
-#         X_val, num_iteration=gbm_age.best_iteration)
-#     y_pred = np.argmax(y_pred_probability, axis=1)
-#     print('v'*20)
-#     print('leaves: ', leaves)
-#     print('The accuracy of prediction is:{:.2f}'.format(
-#         accuracy_score(y_val_age, y_pred)))
-#     print('v'*20)
-
-
-# %%

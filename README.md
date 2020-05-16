@@ -12,7 +12,7 @@
 - [x] 处理成序列问题后，使用word2vec生成词嵌入后
     - [x] +Dense (accuracy: 1.05)
     - [ ] +RNN等序列模型
-    - [ ] +LightGBM
+    - [x] +LightGBM (accuraty: 0.8)
 - [ ] GNN生成user_id creative_id ad_id等的词嵌入后分类
     - [ ] +Dense
     - [ ] +RNN等序列模型
