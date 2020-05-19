@@ -12,17 +12,22 @@ Y_train_gender = user.gender
 Y_train_age = user.age
 corpus = []
 f = open('word2vec/userid_creativeids.txt', 'r')
+train_examples = 100
+test_examples = 200
+train_test = 300
+# train_examples = 900000
+# test_examples = 1000000
 flag = 0
 for row in f:
     # row = [[int(e) for e in seq] for seq in row.strip().split(' ')]
     row = row.strip()
     corpus.append(row)
     flag += 1
-    if flag == 100:
+    if flag == train_test:
         break
 # %%
-Y_train_gender = Y_train_gender.iloc[:flag]-1
-Y_train_age = Y_train_age.iloc[:flag]-1
+Y_train_gender = Y_train_gender.iloc[:train_examples]-1
+Y_train_age = Y_train_age.iloc[:train_examples]-1
 # %%
 vectorizer = TfidfVectorizer(
     token_pattern=r"(?u)\b\w+\b",
@@ -30,17 +35,26 @@ vectorizer = TfidfVectorizer(
     # max_features=128,
     dtype=np.float32,
 )
-X_train = vectorizer.fit_transform(corpus)
-print(X_train.shape)
+all_data = vectorizer.fit_transform(corpus)
+print(all_data.shape)
+# %%
+train_val = all_data[:train_examples, :]
+# %%
+X_test = all_data[train_examples:(train_examples+test_examples), :]
+# %%
+test_user_id = pd.read_csv(
+    'data/test/click_log.csv').sort_values(['user_id'], ascending=(True)).user_id.unique()
+# %%
+test_user_id = test_user_id[:test_examples]
 # %%
 X_train_gender, X_val_gender, Y_train_gender, Y_val_gender = train_test_split(
-    X_train, Y_train_gender, train_size=0.9, random_state=1)
+    train_val, Y_train_gender, train_size=0.9, random_state=1)
 lgb_train_gender = lgb.Dataset(X_train_gender, Y_train_gender)
 lgb_eval_gender = lgb.Dataset(
     X_val_gender, Y_val_gender, reference=lgb_train_gender)
 
 X_train_age, X_val_age, Y_train_age, Y_val_age = train_test_split(
-    X_train, Y_train_age, train_size=0.9, random_state=1)
+    train_val, Y_train_age, train_size=0.9, random_state=1)
 lgb_train_age = lgb.Dataset(X_train_age, Y_train_age)
 lgb_eval_age = lgb.Dataset(
     X_val_age, Y_val_age, reference=lgb_train_age)
@@ -118,10 +132,44 @@ def LGBM_age(epoch, early_stopping_rounds):
     return gbm
 
 
-LGBM_age(epoch=10, early_stopping_rounds=1000)
+# %%
+gbm_gender = LGBM_gender(epoch=10, early_stopping_rounds=1000)
+# %%
+gbm_age = LGBM_age(epoch=10, early_stopping_rounds=1000)
+
 # %%
 
 
-LGBM_gender(epoch=50, early_stopping_rounds=1000)
+def test():
+    print('Start predicting test gender data ...')
+    y_pred_gender_probability = gbm_gender.predict(
+        X_test, num_iteration=gbm_gender.best_iteration)
+    threshold = 0.5
+    y_pred_gender = np.where(y_pred_gender_probability > threshold, 1, 0)
 
+    print('Start predicting test age data ...')
+    y_pred_age_probability = gbm_age.predict(
+        X_test, num_iteration=gbm_age.best_iteration)
+    y_pred_age = np.argmax(y_pred_age_probability, axis=1)
+
+    print('start voting...')
+
+    d = {'user_id': test_user_id.tolist(),
+         'predicted_age': y_pred_age.tolist(),
+         'predicted_gender': y_pred_gender.tolist(),
+         }
+    ans_df = pd.DataFrame(data=d)
+    # 投票的方式决定gender、age
+    # ans_df_grouped = ans_df.groupby(['user_id']).agg(
+    #     lambda x: x.value_counts().index[0])
+    # ans_df_grouped['user_id'] = ans_df_grouped.index
+    # ans_df_grouped.gender = ans_df_grouped.gender+1
+    # ans_df_grouped.age = ans_df_grouped.age+1
+    columns_order = ['user_id', 'predicted_age', 'predicted_gender']
+    ans_df[columns_order].to_csv(
+        'data/ans/tf_idf.csv', header=True, columns=['user_id', 'predicted_age', 'predicted_gender'], index=False)
+    print('Done!!!')
+
+
+test()
 # %%
