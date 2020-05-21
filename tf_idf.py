@@ -12,11 +12,12 @@ Y_train_gender = user.gender
 Y_train_age = user.age
 corpus = []
 f = open('word2vec/userid_creativeids.txt', 'r')
-train_examples = 100
-test_examples = 200
-train_test = 300
-# train_examples = 900000
-# test_examples = 1000000
+# train_examples = 100
+# test_examples = 200
+# train_test = 300
+train_test = 1900000
+train_examples = 900000
+test_examples = 1000000
 flag = 0
 for row in f:
     # row = [[int(e) for e in seq] for seq in row.strip().split(' ')]
@@ -86,7 +87,7 @@ def LGBM_gender(epoch, early_stopping_rounds):
                     lgb_train_gender,
                     num_boost_round=epoch,
                     valid_sets=lgb_eval_gender,
-                    # early_stopping_rounds=5,
+                    early_stopping_rounds=early_stopping_rounds,
                     )
     print('training done!')
     print('Saving model...')
@@ -123,7 +124,7 @@ def LGBM_age(epoch, early_stopping_rounds):
                     lgb_train_age,
                     num_boost_round=epoch,
                     valid_sets=lgb_eval_age,
-                    early_stopping_rounds=1000,
+                    early_stopping_rounds=early_stopping_rounds,
                     )
     print('Saving model...')
     # save model to file
@@ -133,9 +134,9 @@ def LGBM_age(epoch, early_stopping_rounds):
 
 
 # %%
-gbm_gender = LGBM_gender(epoch=10, early_stopping_rounds=1000)
+gbm_gender = LGBM_gender(epoch=5000, early_stopping_rounds=1000)
 # %%
-gbm_age = LGBM_age(epoch=10, early_stopping_rounds=1000)
+gbm_age = LGBM_age(epoch=5000, early_stopping_rounds=1000)
 
 # %%
 
@@ -153,18 +154,13 @@ def test():
     y_pred_age = np.argmax(y_pred_age_probability, axis=1)
 
     print('start voting...')
-
+    y_pred_gender = y_pred_gender+1
+    y_pred_age = y_pred_age+1
     d = {'user_id': test_user_id.tolist(),
          'predicted_age': y_pred_age.tolist(),
          'predicted_gender': y_pred_gender.tolist(),
          }
     ans_df = pd.DataFrame(data=d)
-    # 投票的方式决定gender、age
-    # ans_df_grouped = ans_df.groupby(['user_id']).agg(
-    #     lambda x: x.value_counts().index[0])
-    # ans_df_grouped['user_id'] = ans_df_grouped.index
-    # ans_df_grouped.gender = ans_df_grouped.gender+1
-    # ans_df_grouped.age = ans_df_grouped.age+1
     columns_order = ['user_id', 'predicted_age', 'predicted_gender']
     ans_df[columns_order].to_csv(
         'data/ans/tf_idf.csv', header=True, columns=['user_id', 'predicted_age', 'predicted_gender'], index=False)
