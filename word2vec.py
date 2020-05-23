@@ -38,7 +38,7 @@ with open('word2vec/userid_creativeids.txt', 'w')as f:
 sentences = LineSentence('word2vec/userid_creativeids.txt')
 dimension_embedding = 128
 model = Word2Vec(sentences, size=dimension_embedding,
-                 window=3, min_count=1, workers=-1)
+                 window=10, min_count=1, workers=-1)
 model.save("word2vec/word2vec.model")
 path = "word2vec/wordvectors.kv"
 model.wv.save(path)
@@ -71,10 +71,10 @@ df_creativeid_embedding = pd.read_hdf(
     key='df_creativeid_embedding', mode='r')
 # %%
 # 不需要读出list
-with open('word2vec/userid_creativeids.txt', 'r')as f:
-    seq_creative_id = f.readlines()
-seq_creative_id = [[str(e) for e in line.strip().split(' ')]
-                   for line in seq_creative_id]
+# with open('word2vec/userid_creativeids.txt', 'r')as f:
+#     seq_creative_id = f.readlines()
+# seq_creative_id = [[str(e) for e in line.strip().split(' ')]
+#                    for line in seq_creative_id]
 
 # %%
 userid_creativeid_embedding = pd.merge(
@@ -95,13 +95,13 @@ for col_name in columns:
 df_user_embedding = pd.DataFrame(data)
 # %%
 # this will take 24 hours!!!
-# debug = 0
-for user in tqdm(range(len(seq_creative_id))):
-    user_em = df_creativeid_embedding.loc[seq_creative_id[user]].mean()
-    # df_user_embedding = df_user_embedding.append(user_em, ignore_index=True)
-    # debug += 1
-    # if debug == 10:
-    #     break
+# # debug = 0
+# for user in tqdm(range(len(seq_creative_id))):
+#     user_em = df_creativeid_embedding.loc[seq_creative_id[user]].mean()
+# df_user_embedding = df_user_embedding.append(user_em, ignore_index=True)
+# debug += 1
+# if debug == 10:
+#     break
 # debug = 0
 # frames = []
 # for creative_id in tqdm.tqdm(wv.vocab):

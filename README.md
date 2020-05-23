@@ -10,15 +10,18 @@
     - [ ] +LightGBM
     - [ ] +RNN
 - [x] 处理成序列问题后，使用word2vec生成词嵌入后
-    - [x] 3个特征+Dense (**accuracy: 1.05**)
-    - [ ] 6个特征+Dense (accuracy: )
-    - [ ] +RNN等序列模型
     - [x] +LightGBM (accuraty: 0.8)
+    - [x] 3个特征+Dense (**accuracy: 1.05**)
+    - [x] 6个128特征+Conv 1D (**accuracy: 1.15**)
+    - [x] 6个128特征+Dense (**accuracy: 1.20**)
+    - [ ] +RNN等序列模型
 - [ ] GNN生成user_id creative_id ad_id等的词嵌入后分类
     - [ ] +Dense
     - [ ] +RNN等序列模型
     - [ ] +LightGBM
 - [ ] TF-IDF
+    - [ ] +LightGBM
+    - [ ] +Dense
 - [ ] DeepFM、DeepFFM等
 - [ ] 集成学习：比赛最后阶段使用上分
 
