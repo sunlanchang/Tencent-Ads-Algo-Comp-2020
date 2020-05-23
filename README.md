@@ -12,8 +12,8 @@
 - [x] 处理成序列问题后，使用word2vec生成词嵌入后
     - [x] +LightGBM (accuraty: 0.8)
     - [x] 3个特征+Dense (**accuracy: 1.05**)
-    - [x] 6个128特征+Conv 1D (**accuracy: 1.15**)
-    - [x] 6个128特征+Dense (**accuracy: 1.20**)
+    - [x] 6个128维特征+Conv 1D (**accuracy: 1.15**)
+    - [x] 6个128维特征+Dense (**accuracy: 1.20**)
     - [ ] +RNN等序列模型
 - [ ] GNN生成user_id creative_id ad_id等的词嵌入后分类
     - [ ] +Dense
