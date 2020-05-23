@@ -3,7 +3,7 @@
 
 # TODO
 
-- [x] 传统机器学习如随机森林、决策树、SVM、朴素贝叶斯、贝叶斯网络、逻辑回归、AdaBoost等 (accuracy < 1.0)
+- [x] 传统机器学习如随机森林、决策树、SVM、朴素贝叶斯、贝叶斯网络、逻辑回归、AdaBoost等 (accuracy < 1.0，随机森林：0.89)
 - [ ] 直接对category feature和numeric feature使用全连接网络
 - [x] LightGBM
     - [x] +Voting (accuracy: 0.91)
@@ -25,10 +25,6 @@
 - [ ] DeepFM、DeepFFM等
 - [ ] 集成学习：比赛最后阶段使用上分
 
-## 传统机器学习
-
-- 随机森林：0.89
-
 ## 处理成序列问题
 
 把每个点击的creative_id或者ad_id当作一个词，把一个人90天内点击的creative_id或者ad_id列表当作一个句子，使用word2vec来构造creative_id或者ad_id嵌入表示。最后进行简单的统计操作得到用户的向量表示。这种序列简单聚合导致信息损失，显得是非常的粗糙，需要进一步引入attention等方法。
@@ -38,6 +34,7 @@
 ## TF-IDF
 
 NLP中常用的做法，将用户点击序列中的creative_id或者ad_id集合看作一篇文档，将每个creative_id或者ad_id视为文档中的文字，然后使用tfidf。当然这也下来维度也非常高，可以通过参数调整来降低维度，比如sklearn中的TfidfVectorizer，可以使用max_df和min_df进行调整。
+- df(document frequency)：某一个creative_id在所有用户的creative_id序列出现的频率。
 
 ## DeepFM、DeepFFM、xDeepFM
 

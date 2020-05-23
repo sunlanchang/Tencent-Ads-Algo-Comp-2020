@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 import lightgbm as lgb
+from mail import mail
 # %%
 user = pd.read_csv(
     'data/train_preliminary/user.csv').sort_values(['user_id'], ascending=(True,))
@@ -32,12 +33,14 @@ Y_train_age = Y_train_age.iloc[:train_examples]-1
 # %%
 vectorizer = TfidfVectorizer(
     token_pattern=r"(?u)\b\w+\b",
-    min_df=1,
+    min_df=100,
+    max_df=0.1,
     # max_features=128,
     dtype=np.float32,
 )
 all_data = vectorizer.fit_transform(corpus)
-print(all_data.shape)
+print('(examples, features)', all_data.shape)
+mail('train tfidf done!')
 # %%
 train_val = all_data[:train_examples, :]
 # %%
@@ -134,10 +137,11 @@ def LGBM_age(epoch, early_stopping_rounds):
 
 
 # %%
-gbm_gender = LGBM_gender(epoch=5000, early_stopping_rounds=1000)
+gbm_gender = LGBM_gender(epoch=1500, early_stopping_rounds=500)
 # %%
-gbm_age = LGBM_age(epoch=5000, early_stopping_rounds=1000)
-
+mail('train gender done!')
+gbm_age = LGBM_age(epoch=2000, early_stopping_rounds=500)
+mail('train age done!')
 # %%
 
 
