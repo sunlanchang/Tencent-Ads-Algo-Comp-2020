@@ -8,7 +8,6 @@ from mail import mail
 # %%
 user = pd.read_csv(
     'data/train_preliminary/user.csv').sort_values(['user_id'], ascending=(True,))
-# %%
 Y_train_gender = user.gender
 Y_train_age = user.age
 corpus = []
@@ -31,16 +30,21 @@ for row in f:
 Y_train_gender = Y_train_gender.iloc[:train_examples]-1
 Y_train_age = Y_train_age.iloc[:train_examples]-1
 # %%
+min_df = 30
+max_df = 0.001
 vectorizer = TfidfVectorizer(
     token_pattern=r"(?u)\b\w+\b",
-    min_df=100,
-    max_df=0.1,
+    min_df=min_df,
+    # max_df=max_df,
     # max_features=128,
     dtype=np.float32,
 )
 all_data = vectorizer.fit_transform(corpus)
 print('(examples, features)', all_data.shape)
-mail('train tfidf done!')
+print('train tfidf done! min_df={}, max_df={} shape is {}'.format(
+    min_df, max_df, all_data.shape[1]))
+mail('train tfidf done! min_df={}, max_df={} shape is {}'.format(
+    min_df, max_df, all_data.shape[1]))
 # %%
 train_val = all_data[:train_examples, :]
 # %%
@@ -95,7 +99,7 @@ def LGBM_gender(epoch, early_stopping_rounds):
     print('training done!')
     print('Saving model...')
     # save model to file
-    gbm.save_model('tmp/model_gender.txt')
+    gbm.save_model('tmp/model_gender_dfmin_30.txt')
     print('save model done!')
     return gbm
 # %%
@@ -131,13 +135,16 @@ def LGBM_age(epoch, early_stopping_rounds):
                     )
     print('Saving model...')
     # save model to file
-    gbm.save_model('tmp/model_age.txt')
+    gbm.save_model('tmp/model_age_dfmin_30.txt')
     print('save model done!')
     return gbm
 
 
 # %%
-gbm_gender = LGBM_gender(epoch=1500, early_stopping_rounds=500)
+# gbm_gender = lgb.Booster(model_file='tmp/model_gender.txt')
+# gbm_age = lgb.Booster(model_file='tmp/model_age.txt')
+# %%
+gbm_gender = LGBM_gender(epoch=2000, early_stopping_rounds=500)
 # %%
 mail('train gender done!')
 gbm_age = LGBM_age(epoch=2000, early_stopping_rounds=500)
