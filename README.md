@@ -20,7 +20,7 @@
     - [ ] +RNN等序列模型
     - [ ] +LightGBM
 - [ ] TF-IDF
-    - [ ] +LightGBM (**accuracy: 1.26**)
+    - [ ] min_df=30 + LightGBM (**accuracy: 1.30**)
     - [ ] +Dense
 - [ ] DeepFM、DeepFFM等
 - [ ] 集成学习：比赛最后阶段使用上分
