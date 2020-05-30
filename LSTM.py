@@ -9,6 +9,7 @@ from tensorflow.keras.models import Model, Sequential
 import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
+from mail import mail
 # %%
 # f = open('tmp/userid_creative_ids.txt')
 f = open('word2vec/userid_creative_ids.txt')
@@ -50,6 +51,15 @@ if debug:
     max_len_creative_id = 100
 # shape：(sequence长度,)
 input_x = Input(shape=(None,))
+# cpus = tf.config.experimental.list_logical_devices('CPU')
+# with tf.device('cpu'):
+#     emb =  Embedding(input_dim=num_creative_id,
+#                 output_dim=128,
+#                 weights=[embedding_matrix],
+#                 trainable=False,
+#                 input_length=max_len_creative_id,
+#                 mask_zero=True)
+# x = emb(input_x)
 x = Embedding(input_dim=num_creative_id,
               output_dim=128,
               weights=[embedding_matrix],
@@ -89,7 +99,7 @@ with open('word2vec/userid_creative_ids.txt')as f:
 
 # %%
 if debug:
-    sequences = tokenizer.texts_to_sequences(X_train[:900000])
+    sequences = tokenizer.texts_to_sequences(X_train[:900000//1])
     sequences_matrix = pad_sequences(sequences, maxlen=100)
 else:
     sequences = tokenizer.texts_to_sequences(X_train)
@@ -107,8 +117,12 @@ Y_age = user_train['age'].values
 Y_gender = Y_gender - 1
 # %%
 if debug:
-    Y_gender = Y_gender[:100000]
+    Y_gender = Y_gender[:900000//1]
 # %%
-model.fit(sequences_matrix, Y_gender,
-          validation_split=0.1, epochs=100, batch_size=1024, verbose=1)
+try:
+    model.fit(sequences_matrix, Y_gender,
+              validation_split=0.1, epochs=100, batch_size=512, verbose=1)
+    mail('train lstm done!!!')
+except:
+    mail('train lstm failed!!!')
 # %%
