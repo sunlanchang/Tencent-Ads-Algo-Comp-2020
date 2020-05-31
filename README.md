@@ -1,6 +1,32 @@
 # TAAC2020
 腾讯广告算法大赛2020
 
+# 代码结构
+
+```bash
+.
+├── img/
+├── data/                # 训练和测试数据
+├── Dense_LSTM_embedding_128_dim.py # 对于128维word2vec特征使用Dense和LSTM模型
+├── get_user_embed_multiprocess.py # 使用多进程合并特征(不再使用)
+├── LICENSE
+├── LightGMB.py         # LightGBM baseline
+├── LightGBM.py         # 使用最原始的id作为特征
+├── LightGBM_embedding_128_dim.py # 使用word2vec平均后的128维特征作为特征作为特征输入LGBM
+├── LightGBM_embedding_16_dim.py # 同上，维度变为16
+├── LightGBM_gender.py         # 使用word2vec平均后的128维特征作为特征输入LSTM预测gender
+├── LightGBM_age.py            # 同上，预测age
+├── LSTM_gender.py      # 对于word2vec序列特征输入LSTM预测gender
+├── LSTM_age.py         # 同上，预测age
+├── mail.py             # 训练完发邮件给自己
+├── README.md
+├── tf_idf              # 提取tf-idf特征
+├── word2vec/            # 保存word2vec生成的向量和中间文件
+├── word2vec_creaitve_id.py # 生成用户关于creative id的embedding vector
+├── process_data.ipynb  # 将训练集ad.csv、user.csv合并到click_log.csv，测试集中的ad.csv合并到click_log.csv
+├── 腾讯广告算法大赛.pdf   # 比赛说明文档
+└── tmp                 # 临时文件
+```
 # TODO
 
 - [x] 传统机器学习如随机森林、决策树、SVM、朴素贝叶斯、贝叶斯网络、逻辑回归、AdaBoost等 (accuracy < 1.0，随机森林：0.89)
@@ -48,32 +74,6 @@ NLP中常用的做法，将用户点击序列中的creative_id或者ad_id集合�
 
 最终融合多个模型使用。
 
-# 代码介绍
-
-```bash
-.
-├── img/
-├── data/                # 训练和测试数据
-├── Dense_LSTM_embedding_128_dim.py # 对于128维word2vec特征使用Dense和LSTM模型
-├── get_user_embed_multiprocess.py # 使用多进程合并特征(不再使用)
-├── LICENSE
-├── LightGMB.py         # LightGBM baseline
-├── LightGBM.py         # 使用最原始的id作为特征
-├── LightGBM_embedding_128_dim.py # 使用word2vec平均后的128维特征作为特征作为特征输入LGBM
-├── LightGBM_embedding_16_dim.py # 同上，维度变为16
-├── LightGBM_gender.py         # 使用word2vec平均后的128维特征作为特征输入LSTM预测gender
-├── LightGBM_age.py            # 同上，预测age
-├── LSTM_gender.py      # 对于word2vec序列特征输入LSTM预测gender
-├── LSTM_age.py         # 同上，预测age
-├── mail.py             # 训练完发邮件给自己
-├── README.md
-├── tf_idf              # 提取tf-idf特征
-├── word2vec/            # 保存word2vec生成的向量和中间文件
-├── word2vec_creaitve_id.py # 生成用户关于creative id的embedding vector
-├── process_data.ipynb  # 将训练集ad.csv、user.csv合并到click_log.csv，测试集中的ad.csv合并到click_log.csv
-├── 腾讯广告算法大赛.pdf   # 比赛说明文档
-└── tmp                 # 临时文件
-```
 
 # 数据探索
 
