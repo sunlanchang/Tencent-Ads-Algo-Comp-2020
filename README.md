@@ -6,7 +6,7 @@
 ```bash
 .
 ├── img/
-├── data/                # 训练和测试数据
+├── data/               # 训练和测试数据
 ├── Dense_LSTM_embedding_128_dim.py # 对于128维word2vec特征使用Dense和LSTM模型
 ├── get_user_embed_multiprocess.py  # 使用多进程合并特征(不再使用)
 ├── LICENSE
