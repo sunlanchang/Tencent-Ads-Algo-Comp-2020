@@ -11,6 +11,8 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 from mail import mail
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 # %%
 # f = open('tmp/userid_creative_ids.txt')
 f = open('word2vec/userid_creative_ids.txt')

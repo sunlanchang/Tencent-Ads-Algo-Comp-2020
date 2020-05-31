@@ -14,14 +14,14 @@
     - [x] 3个特征+Dense (**accuracy: 1.05**)
     - [x] 6个128维特征+Conv 1D (**accuracy: 1.15**)
     - [x] 6个128维特征+Dense (**accuracy: 1.20**)
-    - [ ] +RNN等序列模型
+    - [x] +RNN等序列模型 (training)
 - [ ] GNN生成user_id creative_id ad_id等的词嵌入后分类
     - [ ] +Dense
     - [ ] +RNN等序列模型
     - [ ] +LightGBM
-- [ ] TF-IDF
-    - [ ] min_df=30 + LightGBM (**accuracy: 1.30**)
-    - [ ] +Dense
+- [x] TF-IDF
+    - [x] min_df=30 + LightGBM (**accuracy: 1.30**)
+    - [x] +Dense (**accuracy: 1.22**)
 - [ ] DeepFM、DeepFFM等
 - [ ] 集成学习：比赛最后阶段使用上分
 
