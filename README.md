@@ -1,4 +1,4 @@
-# TAAC2020
+# Tencent Advertising Algorithm Competition 2020
 腾讯广告算法大赛2020
 
 #### 注意的点
