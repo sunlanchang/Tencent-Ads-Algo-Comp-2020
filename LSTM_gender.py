@@ -71,7 +71,7 @@ x = Embedding(input_dim=num_creative_id,
               trainable=False,
               input_length=max_len_creative_id,
               mask_zero=True)(input_x)
-x = LSTM(1024*10)(x)
+x = LSTM(1024)(x)
 output_y = Dense(1, activation='sigmoid')(x)
 
 model = Model([input_x], output_y)
@@ -97,14 +97,14 @@ model.compile(loss='binary_crossentropy',
 
 # %%
 X_train = []
-with open('word2vec/userid_creative_ids.txt')as f:
+with open('word2vec/userid_creative_ids.txt') as f:
     for text in f:
         X_train.append(text.strip())
 
 
 # %%
 if debug:
-    sequences = tokenizer.texts_to_sequences(X_train[:900000//1])
+    sequences = tokenizer.texts_to_sequences(X_train[:90000//1])
     sequences_matrix = pad_sequences(sequences, maxlen=max_len_creative_id)
 else:
     sequences = tokenizer.texts_to_sequences(X_train)
@@ -122,18 +122,19 @@ Y_age = user_train['age'].values
 Y_gender = Y_gender - 1
 # %%
 if debug:
-    Y_gender = Y_gender[:900000//1]
+    Y_gender = Y_gender[:90000//1]
 # %%
 checkpoint = ModelCheckpoint("tmp/gender_epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=0,
                              save_best_only=False, mode='auto', period=20)
 
 # %%
 try:
+    mail('start train lstm')
     model.fit(sequences_matrix,
               Y_gender,
               validation_split=0.1,
               epochs=100,
-              batch_size=768,
+              batch_size=256,
               callbacks=[checkpoint],
               )
     mail('train gender lstm done!!!')

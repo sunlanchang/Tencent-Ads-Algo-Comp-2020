@@ -103,7 +103,7 @@ with open('word2vec/userid_creative_ids.txt')as f:
 
 # %%
 if debug:
-    sequences = tokenizer.texts_to_sequences(X_train[:900000//1])
+    sequences = tokenizer.texts_to_sequences(X_train[:90000//1])
     X_train = pad_sequences(sequences, maxlen=max_len_creative_id)
 else:
     sequences = tokenizer.texts_to_sequences(X_train)
@@ -122,8 +122,8 @@ Y_age = Y_age-1
 Y_gender = Y_gender - 1
 # %%
 if debug:
-    Y_gender = Y_gender[:900000//1]
-    Y_age = Y_age[:900000//1]
+    Y_gender = Y_gender[:90000//1]
+    Y_age = Y_age[:90000//1]
     Y_age = to_categorical(Y_age)
 # %%
 checkpoint = ModelCheckpoint("tmp/epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=0,
@@ -134,7 +134,7 @@ try:
               Y_age,
               validation_split=0.1,
               epochs=100,
-              batch_size=768,
+              batch_size=256,
               callbacks=[checkpoint],
               )
     mail('train lstm for age done!!!')
