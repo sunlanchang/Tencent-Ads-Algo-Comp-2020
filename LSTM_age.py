@@ -107,10 +107,10 @@ with open('word2vec/userid_creative_ids.txt')as f:
 # %%
 if debug:
     sequences = tokenizer.texts_to_sequences(creative_id_seq[:900000//1])
-    creative_id_seq = pad_sequences(sequences, maxlen=max_len_creative_id)
 else:
     sequences = tokenizer.texts_to_sequences(creative_id_seq)
 
+X_train = pad_sequences(sequences, maxlen=max_len_creative_id)
 
 # %%
 # 使用迭代器实现
