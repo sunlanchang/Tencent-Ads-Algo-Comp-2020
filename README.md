@@ -107,7 +107,7 @@ len(set(ad_test.advertiser_id.values.tolist()) & set(ad_train.advertiser_id.valu
 - 测试集和训练集共有user_id：1900000，其中训练集900000，测试集1000000
 - 训练集和测试集共有唯一的cretive_id数：2481135
 
-# 获得训练数据
+# 合并训练数据
 - `process_data.ipynb`将三个文件按照外键合并成一个文件，把`process_data.ipynb`中的数据路径修改一下即可。
 
 合并之后的数据：
