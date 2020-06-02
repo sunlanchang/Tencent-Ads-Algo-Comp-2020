@@ -34,14 +34,14 @@
 ```
 # TODO
 
-- [x] 传统机器学习如随机森林、决策树、SVM、朴素贝叶斯、贝叶斯网络、逻辑回归、AdaBoost等 (accuracy < 1.0，随机森林：0.89)
+- [x] 传统机器学习如随机森林、决策树、SVM、朴素贝叶斯、贝叶斯网络、逻辑回归、AdaBoost等 (**accuracy < 1.0**，随机森林：0.89)
 - [ ] 直接对category feature和numeric feature使用全连接网络
 - [x] LightGBM
-    - [x] +Voting (accuracy: 0.91)
+    - [x] +Voting (**accuracy: 0.91**)
     - [ ] +LightGBM
     - [ ] +RNN
 - [x] 处理成序列问题后，使用word2vec生成词嵌入后
-    - [x] +LightGBM (accuraty: 0.8)
+    - [x] +LightGBM (**accuracy: 0.8**)
     - [x] 3个特征+Dense (**accuracy: 1.05**)
     - [x] 6个128维特征+Conv 1D (**accuracy: 1.15**)
     - [x] 6个128维特征+Dense (**accuracy: 1.20**)
