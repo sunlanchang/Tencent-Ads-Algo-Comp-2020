@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from gensim.models import Word2Vec, KeyedVectors
-from tensorflow.keras.layers import Input, LSTM, Embedding, Dense
+from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Dropout
 from tensorflow.keras.models import Model, Sequential
 import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -52,7 +52,7 @@ for creative_id in creative_id_tokens:
 # %%
 debug = True
 if debug:
-    max_len_creative_id = 200
+    max_len_creative_id = 50
 # shape：(sequence长度,)
 input_x = Input(shape=(None,))
 # cpus = tf.config.experimental.list_logical_devices('CPU')
@@ -67,10 +67,13 @@ input_x = Input(shape=(None,))
 x = Embedding(input_dim=num_creative_id,
               output_dim=128,
               weights=[embedding_matrix],
-              trainable=False,
+              trainable=True,
               input_length=max_len_creative_id,
               mask_zero=True)(input_x)
-x = LSTM(1024)(x)
+x = LSTM(1024, return_sequences=True)(x)
+x = LSTM(512, return_sequences=False)(x)
+x = Dense(128)(x)
+x = Dropout(0.5)(x)
 output_y = Dense(10, activation='softmax')(x)
 
 model = Model([input_x], output_y)
@@ -103,7 +106,7 @@ with open('word2vec/userid_creative_ids.txt')as f:
 
 # %%
 if debug:
-    sequences = tokenizer.texts_to_sequences(X_train[:90000//1])
+    sequences = tokenizer.texts_to_sequences(X_train[:900000//1])
     X_train = pad_sequences(sequences, maxlen=max_len_creative_id)
 else:
     sequences = tokenizer.texts_to_sequences(X_train)
@@ -122,19 +125,19 @@ Y_age = Y_age-1
 Y_gender = Y_gender - 1
 # %%
 if debug:
-    Y_gender = Y_gender[:90000//1]
-    Y_age = Y_age[:90000//1]
+    Y_gender = Y_gender[:900000//1]
+    Y_age = Y_age[:900000//1]
     Y_age = to_categorical(Y_age)
 # %%
-checkpoint = ModelCheckpoint("tmp/epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=0,
-                             save_best_only=False, mode='auto', period=20)
+checkpoint = ModelCheckpoint("tmp/age_epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=0,
+                             save_best_only=False, mode='auto', period=1)
 # %%
 try:
     model.fit(X_train,
               Y_age,
               validation_split=0.1,
               epochs=100,
-              batch_size=256,
+              batch_size=768,
               callbacks=[checkpoint],
               )
     mail('train lstm for age done!!!')
