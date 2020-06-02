@@ -112,9 +112,6 @@ else:
 X_train = pad_sequences(sequences, maxlen=max_len_creative_id)
 
 # %%
-# 使用迭代器实现
-# X_train = pad_sequences(sequences, maxlen=max_len_creative_id)
-# %%
 user_train = pd.read_csv(
     'data/train_preliminary/user.csv').sort_values(['user_id'], ascending=(True,))
 Y_gender = user_train['gender'].values
