@@ -69,7 +69,7 @@ Note：这里注意一点，使用embedding，一定要将embedding设置trainab
 
 NLP中常用的做法，将用户点击序列中的creative_id或者ad_id集合看作一篇文档，将每个creative_id或者ad_id视为文档中的文字，然后使用tfidf。当然这也下来维度也非常高，可以通过参数调整来降低维度，比如sklearn中的TfidfVectorizer，可以使用max_df和min_df进行调整。
 - df(document frequency)：某一个creative_id在所有用户的creative_id序列出现的频率。
-
+- min=30训练出的向量维度7万左右，训练时间为3天左右，效果1.30
 ## DeepFM、DeepFFM、xDeepFM
 
 推荐系统常用架构。
