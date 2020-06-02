@@ -16,8 +16,15 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 # %%
-# f = open('tmp/userid_creative_ids.txt')
-f = open('word2vec/userid_creative_ids.txt')
+
+debug = True
+
+# %%
+if debug:
+    # f = open('tmp/userid_creative_ids.txt')
+    f = open('word2vec/userid_creative_ids.txt')
+else:
+    pass
 num_creative_id = 2481135+1
 tokenizer = Tokenizer(num_words=num_creative_id)
 tokenizer.fit_on_texts(f)
@@ -30,12 +37,12 @@ wv = KeyedVectors.load(path, mmap='r')
 
 
 # %%
-f = open('word2vec/userid_creative_ids.txt')
-max_len_creative_id = -1
-for line in f:
-    current_line_len = len(line.strip().split(' '))
-    max_len_creative_id = max(max_len_creative_id, current_line_len)
-f.close()
+# f = open('word2vec/userid_creative_ids.txt')
+# max_len_creative_id = -1
+# for line in f:
+#     current_line_len = len(line.strip().split(' '))
+#     max_len_creative_id = max(max_len_creative_id, current_line_len)
+# f.close()
 
 
 # %%
@@ -51,20 +58,10 @@ for creative_id in creative_id_tokens:
 
 
 # %%
-debug = True
 if debug:
-    max_len_creative_id = 50
+    max_len_creative_id = 100
 # shape：(sequence长度,)
 input_x = Input(shape=(None,))
-# cpus = tf.config.experimental.list_logical_devices('CPU')
-# with tf.device('cpu'):
-#     emb =  Embedding(input_dim=num_creative_id,
-#                 output_dim=128,
-#                 weights=[embedding_matrix],
-#                 trainable=False,
-#                 input_length=max_len_creative_id,
-#                 mask_zero=True)
-# x = emb(input_x)
 x = Embedding(input_dim=num_creative_id,
               output_dim=128,
               weights=[embedding_matrix],
@@ -79,6 +76,7 @@ output_y = Dense(1, activation='sigmoid')(x)
 
 model = Model([input_x], output_y)
 
+# 这种方式构建模型灵活性差但是方便构建
 # model = Sequential([
 #     Embedding(num_creative_id, 128,
 #               weights=[embedding_matrix],
@@ -99,23 +97,23 @@ model.predict(test_data)
 
 
 # %%
-X_train = []
+creative_id_seq = []
 with open('word2vec/userid_creative_ids.txt') as f:
     for text in f:
-        X_train.append(text.strip())
+        creative_id_seq.append(text.strip())
 
 
 # %%
 if debug:
-    sequences = tokenizer.texts_to_sequences(X_train[:900000//1])
-    sequences_matrix = pad_sequences(sequences, maxlen=max_len_creative_id)
+    sequences = tokenizer.texts_to_sequences(creative_id_seq[:900000//100])
 else:
-    sequences = tokenizer.texts_to_sequences(X_train)
+    sequences = tokenizer.texts_to_sequences(creative_id_seq)
 
+X_train = pad_sequences(sequences, maxlen=max_len_creative_id)
 
 # %%
 # 使用迭代器实现
-# sequences_matrix = pad_sequences(sequences, maxlen=max_len_creative_id)
+# X_train = pad_sequences(sequences, maxlen=max_len_creative_id)
 # %%
 user_train = pd.read_csv(
     'data/train_preliminary/user.csv').sort_values(['user_id'], ascending=(True,))
@@ -125,7 +123,7 @@ Y_age = user_train['age'].values
 Y_gender = Y_gender - 1
 # %%
 if debug:
-    Y_gender = Y_gender[:900000//1]
+    Y_gender = Y_gender[:900000//100]
 # %%
 checkpoint = ModelCheckpoint("tmp/gender_epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=0,
                              save_best_only=False, mode='auto', period=1)
@@ -133,7 +131,7 @@ checkpoint = ModelCheckpoint("tmp/gender_epoch_{epoch:02d}.hdf5", monitor='val_l
 # %%
 try:
     mail('start train lstm')
-    model.fit(sequences_matrix,
+    model.fit(X_train,
               Y_gender,
               validation_split=0.1,
               epochs=100,
@@ -144,4 +142,27 @@ try:
 except Exception as e:
     e = str(e)
     mail('train lstm failed!!! ' + e)
+
+
+# %%
+if debug:
+    sequences = tokenizer.texts_to_sequences(
+        creative_id_seq[900000:900000+100])
+else:
+    sequences = tokenizer.texts_to_sequences(
+        creative_id_seq[900000:])
+
+X_test = pad_sequences(sequences, maxlen=max_len_creative_id)
+# %%
+y_pred = model.predict(X_test)
+
+y_pred = np.where(y_pred > 0.5, 1, 0)
+y_pred = y_pred.flatten()
+
+# %%
+res = pd.DataFrame(data=y_pred)
+res.to_csv(
+    'data/ans/lstm.csv', header=True, columns=['predicted_gender'], index=False)
+
+
 # %%
