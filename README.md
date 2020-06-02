@@ -45,7 +45,8 @@
     - [x] 3个特征+Dense (**accuracy: 1.05**)
     - [x] 6个128维特征+Conv 1D (**accuracy: 1.15**)
     - [x] 6个128维特征+Dense (**accuracy: 1.20**)
-    - [x] +RNN等序列模型 (training)
+    - [x] 128维序列+LSTM Note: embedding跟随训练变化不是静态即trainable=True (**accuracy: 1.32**)
+- [ ] Transformer
 - [ ] GNN生成user_id creative_id ad_id等的词嵌入后分类
     - [ ] +Dense
     - [ ] +RNN等序列模型
@@ -61,6 +62,8 @@
 把每个点击的creative_id或者ad_id当作一个词，把一个人90天内点击的creative_id或者ad_id列表当作一个句子，使用word2vec来构造creative_id或者ad_id嵌入表示。最后进行简单的统计操作得到用户的向量表示。这种序列简单聚合导致信息损失，显得是非常的粗糙，需要进一步引入attention等方法。
 
 上述方法可以直接使用传统的GBDT相关模型进行，1.3应该没问题。下面可以考虑序列建模方式。例如RNN/LSTM/GRU，这类方法将用户行为看做一个序列，套用NLP领域常用的RNN/LSTM/GRU方法来进行建模。
+
+Note：这里注意一点，使用embedding，一定要将embedding设置trainable=True，否则效果会非常不好。
 
 ## TF-IDF
 
