@@ -162,7 +162,7 @@ y_pred = y_pred.flatten()
 # %%
 res = pd.DataFrame(data=y_pred)
 res.to_csv(
-    'data/ans/lstm.csv', header=True, columns=['predicted_gender'], index=False)
+    'data/ans/lstm_gender.csv', header=True, columns=['predicted_gender'], index=False)
 
 
 # %%

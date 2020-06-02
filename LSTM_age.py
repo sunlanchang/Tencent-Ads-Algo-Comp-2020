@@ -145,3 +145,25 @@ except Exception as e:
     e = str(e)
     mail('train lstm for age failed!!! ' + e)
 # %%
+if debug:
+    sequences = tokenizer.texts_to_sequences(
+        creative_id_seq[900000:900000+100])
+else:
+    sequences = tokenizer.texts_to_sequences(
+        creative_id_seq[900000:])
+
+X_test = pad_sequences(sequences, maxlen=max_len_creative_id)
+
+
+# %%
+y_pred = model.predict(X_test)
+
+
+# %%
+y_pred_age = np.argmax(y_pred, axis=1)
+y_pred = y_pred.flatten()
+
+# %%
+res = pd.DataFrame(data=y_pred)
+res.to_csv(
+    'data/ans/lstm_age.csv', header=True, columns=['predicted_age'], index=False)
