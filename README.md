@@ -45,7 +45,7 @@
     - [x] 3个特征+Dense (**accuracy: 1.05**)
     - [x] 6个128维特征+Conv 1D (**accuracy: 1.15**)
     - [x] 6个128维特征+Dense (**accuracy: 1.20**)
-    - [x] 128维序列+LSTM Note: embedding跟随训练变化不是静态即trainable=True (**accuracy: 1.32**)
+    - [x] 128维序列不做平均处理+LSTM Note: embedding跟随训练变化不是静态即trainable=True (**accuracy: 1.32**)
 - [ ] Transformer
 - [ ] GNN生成user_id creative_id ad_id等的词嵌入后分类
     - [ ] +Dense
