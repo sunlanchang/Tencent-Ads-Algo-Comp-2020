@@ -106,7 +106,7 @@ with open('word2vec/userid_creative_ids.txt')as f:
 
 # %%
 if debug:
-    sequences = tokenizer.texts_to_sequences(creative_id_seq[:900000//1])
+    sequences = tokenizer.texts_to_sequences(creative_id_seq[:900000//100])
 else:
     sequences = tokenizer.texts_to_sequences(creative_id_seq)
 
@@ -125,8 +125,8 @@ Y_age = Y_age-1
 Y_gender = Y_gender - 1
 # %%
 if debug:
-    Y_gender = Y_gender[:900000//1]
-    Y_age = Y_age[:900000//1]
+    Y_gender = Y_gender[:900000//100]
+    Y_age = Y_age[:900000//100]
     Y_age = to_categorical(Y_age)
 # %%
 checkpoint = ModelCheckpoint("tmp/age_epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=0,
