@@ -60,7 +60,7 @@ for creative_id in creative_id_tokens:
 # %%
 if debug:
     max_len_creative_id = 100
-# shape：(sequence长度,)
+# shape：(sequence长度, )
 input_x = Input(shape=(None,))
 x = Embedding(input_dim=num_creative_id,
               output_dim=128,
