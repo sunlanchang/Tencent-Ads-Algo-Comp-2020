@@ -25,7 +25,7 @@
 ├── LSTM_age.py         # 同上，预测age
 ├── mail.py             # 训练完发邮件给自己
 ├── README.md
-├── tf_idf              # 提取tf-idf特征
+├── tf_idf.py              # 提取tf-idf特征
 ├── word2vec/           # 保存word2vec生成的向量和中间文件
 ├── word2vec_creaitve_id.py         # 生成用户关于creative id的embedding vector
 ├── process_data.ipynb  # 将训练集ad.csv、user.csv合并到click_log.csv，测试集中的ad.csv合并到click_log.csv
