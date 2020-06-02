@@ -98,18 +98,18 @@ model.predict(test_data)
 
 
 # %%
-X_train = []
+creative_id_seq = []
 with open('word2vec/userid_creative_ids.txt')as f:
     for text in f:
-        X_train.append(text.strip())
+        creative_id_seq.append(text.strip())
 
 
 # %%
 if debug:
-    sequences = tokenizer.texts_to_sequences(X_train[:900000//1])
-    X_train = pad_sequences(sequences, maxlen=max_len_creative_id)
+    sequences = tokenizer.texts_to_sequences(creative_id_seq[:900000//1])
+    creative_id_seq = pad_sequences(sequences, maxlen=max_len_creative_id)
 else:
-    sequences = tokenizer.texts_to_sequences(X_train)
+    sequences = tokenizer.texts_to_sequences(creative_id_seq)
 
 
 # %%
