@@ -109,7 +109,7 @@ if debug:
 else:
     sequences = tokenizer.texts_to_sequences(creative_id_seq)
 
-X_train = pad_sequences(sequences, maxlen=max_len_creative_id)
+X_train = pad_sequences(sequences, maxlen=max_len_creative_id, padding='post')
 
 # %%
 user_train = pd.read_csv(
