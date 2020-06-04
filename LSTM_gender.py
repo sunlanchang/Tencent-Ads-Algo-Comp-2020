@@ -109,7 +109,7 @@ if debug:
 else:
     sequences = tokenizer.texts_to_sequences(creative_id_seq)
 
-X_train = pad_sequences(sequences, maxlen=max_len_creative_id, padding='pre')
+X_train = pad_sequences(sequences, maxlen=max_len_creative_id, padding='post')
 
 # %%
 user_train = pd.read_csv(
@@ -142,7 +142,6 @@ except Exception as e:
 
 
 # %%
-# 加载预训练模型用于预测
 model.load_weights('tmp\gender_epoch_01.hdf5')
 
 
