@@ -142,6 +142,7 @@ except Exception as e:
 
 
 # %%
+# 加载预训练模型用于预测
 model.load_weights('tmp\gender_epoch_01.hdf5')
 
 
