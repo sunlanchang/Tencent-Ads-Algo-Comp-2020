@@ -176,6 +176,7 @@ res.to_csv(
 mail('lstm predict age done!!!')
 
 # %%
+# 合并gender和age答案
 user_id_test = pd.read_csv(
     'data/test/clicklog_ad_user_test.csv').sort_values(['user_id'], ascending=(True,)).user_id.unique()
 ans = pd.DataFrame({'user_id': user_id_test})
