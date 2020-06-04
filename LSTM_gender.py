@@ -12,7 +12,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 from mail import mail
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 # %%
@@ -105,11 +105,11 @@ with open('word2vec/userid_creative_ids.txt') as f:
 
 # %%
 if debug:
-    sequences = tokenizer.texts_to_sequences(creative_id_seq[:900000//100])
+    sequences = tokenizer.texts_to_sequences(creative_id_seq[:900000//1])
 else:
     sequences = tokenizer.texts_to_sequences(creative_id_seq)
 
-X_train = pad_sequences(sequences, maxlen=max_len_creative_id, padding='post')
+X_train = pad_sequences(sequences, maxlen=max_len_creative_id, padding='pre')
 
 # %%
 user_train = pd.read_csv(
@@ -142,24 +142,33 @@ except Exception as e:
 
 
 # %%
+model.load_weights('tmp\gender_epoch_01.hdf5')
+
+
+# %%
 if debug:
     sequences = tokenizer.texts_to_sequences(
-        creative_id_seq[900000:900000+100])
+        creative_id_seq[900000:])
 else:
     sequences = tokenizer.texts_to_sequences(
         creative_id_seq[900000:])
 
 X_test = pad_sequences(sequences, maxlen=max_len_creative_id)
 # %%
-y_pred = model.predict(X_test)
+y_pred = model.predict(X_test, batch_size=4096)
 
 y_pred = np.where(y_pred > 0.5, 1, 0)
 y_pred = y_pred.flatten()
 
 # %%
-res = pd.DataFrame(data=y_pred)
+y_pred = y_pred+1
+# %%
+res = pd.DataFrame({'predicted_gender': y_pred})
 res.to_csv(
     'data/ans/lstm_gender.csv', header=True, columns=['predicted_gender'], index=False)
 
+
+# %%
+mail('predict lstm gender done')
 
 # %%

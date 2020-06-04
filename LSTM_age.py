@@ -52,7 +52,7 @@ for creative_id in creative_id_tokens:
 # %%
 debug = True
 if debug:
-    max_len_creative_id = 50
+    max_len_creative_id = 100
 # shape：(sequence长度,)
 input_x = Input(shape=(None,))
 # cpus = tf.config.experimental.list_logical_devices('CPU')
@@ -106,12 +106,15 @@ with open('word2vec/userid_creative_ids.txt')as f:
 
 # %%
 if debug:
-    sequences = tokenizer.texts_to_sequences(creative_id_seq[:900000//100])
+    sequences = tokenizer.texts_to_sequences(creative_id_seq[:900000//1])
 else:
     sequences = tokenizer.texts_to_sequences(creative_id_seq)
 
 X_train = pad_sequences(sequences, maxlen=max_len_creative_id)
 
+# %%
+# 使用迭代器实现
+# X_train = pad_sequences(sequences, maxlen=max_len_creative_id)
 # %%
 user_train = pd.read_csv(
     'data/train_preliminary/user.csv').sort_values(['user_id'], ascending=(True,))
@@ -122,8 +125,8 @@ Y_age = Y_age-1
 Y_gender = Y_gender - 1
 # %%
 if debug:
-    Y_gender = Y_gender[:900000//100]
-    Y_age = Y_age[:900000//100]
+    Y_gender = Y_gender[:900000//1]
+    Y_age = Y_age[:900000//1]
     Y_age = to_categorical(Y_age)
 # %%
 checkpoint = ModelCheckpoint("tmp/age_epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=0,
@@ -134,7 +137,7 @@ try:
               Y_age,
               validation_split=0.1,
               epochs=100,
-              batch_size=768,
+              batch_size=512,
               callbacks=[checkpoint],
               )
     mail('train lstm for age done!!!')
@@ -142,25 +145,49 @@ except Exception as e:
     e = str(e)
     mail('train lstm for age failed!!! ' + e)
 # %%
+
+model.load_weights('tmp/age_epoch_01.hdf5')
+
+# %%
 if debug:
     sequences = tokenizer.texts_to_sequences(
-        creative_id_seq[900000:900000+100])
+        creative_id_seq[900000:])
 else:
     sequences = tokenizer.texts_to_sequences(
         creative_id_seq[900000:])
 
-X_test = pad_sequences(sequences, maxlen=max_len_creative_id, padding='post')
+X_test = pad_sequences(sequences, maxlen=max_len_creative_id, padding='pre')
 
 
 # %%
-y_pred = model.predict(X_test)
+y_pred = model.predict(X_test, batch_size=4096)
 
 
 # %%
-y_pred_age = np.argmax(y_pred, axis=1)
+y_pred = np.argmax(y_pred, axis=1)
 y_pred = y_pred.flatten()
-
+y_pred = y_pred+1
 # %%
-res = pd.DataFrame(data=y_pred)
+res = pd.DataFrame({'predicted_age': y_pred})
 res.to_csv(
     'data/ans/lstm_age.csv', header=True, columns=['predicted_age'], index=False)
+
+# %%
+mail('lstm predict age done!!!')
+
+# %%
+user_id_test = pd.read_csv(
+    'data/test/clicklog_ad_user_test.csv').sort_values(['user_id'], ascending=(True,)).user_id.unique()
+ans = pd.DataFrame({'user_id': user_id_test})
+
+# %%
+gender = pd.read_csv('data/ans/lstm_gender.csv')
+age = pd.read_csv('data/ans/lstm_age.csv')
+# %%
+ans['predicted_gender'] = gender.predicted_gender
+ans['predicted_age'] = age.predicted_age
+ans.to_csv('data/ans/LSTM.csv', header=True, index=False,
+           columns=['user_id', 'predicted_age', 'predicted_gender'])
+# %%
+mail('save ans to csv done!')
+# %%
