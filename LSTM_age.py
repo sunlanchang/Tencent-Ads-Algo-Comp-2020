@@ -156,7 +156,7 @@ else:
     sequences = tokenizer.texts_to_sequences(
         creative_id_seq[900000:])
 
-X_test = pad_sequences(sequences, maxlen=max_len_creative_id, padding='pre')
+X_test = pad_sequences(sequences, maxlen=max_len_creative_id, padding='post')
 
 
 # %%
