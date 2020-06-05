@@ -71,6 +71,8 @@ def get_train_val():
                 embedding_matrix[index] = embedding_vector
         return embedding_matrix
 
+    creative_id_emb = get_creative_id_emb()
+
     # 获取 ad_id 特征
     f = open('word2vec/userid_ad_ids.txt')
     tokenizer = Tokenizer(num_words=NUM_ad_id)
@@ -92,13 +94,27 @@ def get_train_val():
     Y_age = user_train['age'].values
     Y_gender = Y_gender - 1
 
+    def get_ad_id_emb():
+        path = "word2vec/wordvectors_ad_id.kv"
+        wv = KeyedVectors.load(path, mmap='r')
+        ad_id_tokens = list(wv.vocab.keys())
+        embedding_dim = 128
+        embedding_matrix = np.random.randn(
+            len(ad_id_tokens)+1, embedding_dim)
+        for ad_id in ad_id_tokens:
+            embedding_vector = wv[ad_id]
+            if embedding_vector is not None:
+                index = tokenizer.texts_to_sequences([ad_id])[0][0]
+                embedding_matrix[index] = embedding_vector
+        return embedding_matrix
+
+    ad_id_emb = get_ad_id_emb()
+
     num_examples = Y_gender.shape[0]
-    train_examples = int(num_examples * 0.1)
+    train_examples = int(num_examples * 0.9)
 
     # 分别对应 x1_train x1_val x2_train x2_val y_train y_val
-    return X1_train[:train_examples], X1_train[train_examples:],
-    X2_train[:train_examples], X2_train[train_examples:],
-    Y_gender[:train_examples], Y_gender[train_examples:]
+    return X1_train[:train_examples], X1_train[train_examples:], X2_train[:train_examples], X2_train[train_examples:], Y_gender[:train_examples], Y_gender[train_examples:], creative_id_emb, ad_id_emb
 
 # %%
 
@@ -116,13 +132,13 @@ LEN_creative_id = 100
 LEN_ad_id = 100
 
 
-def get_gender_model():
+def get_gender_model(creative_id_emb, ad_id_emb):
     # shape：(sequence长度, )
     # first input
     input_creative_id = Input(shape=(None,), name='creative_id')
     x1 = Embedding(input_dim=NUM_creative_id,
                    output_dim=128,
-                   #   weights=[embedding_matrix],
+                   weights=[creative_id_emb],
                    trainable=True,
                    input_length=LEN_creative_id,
                    mask_zero=True)(input_creative_id)
@@ -133,7 +149,7 @@ def get_gender_model():
     input_ad_id = Input(shape=(None,), name='ad_id')
     x2 = Embedding(input_dim=NUM_ad_id,
                    output_dim=128,
-                   #   weights=[embedding_matrix],
+                   weights=[ad_id_emb],
                    trainable=True,
                    input_length=LEN_ad_id,
                    mask_zero=True)(input_ad_id)
@@ -155,7 +171,11 @@ def get_gender_model():
 
 
 # %%
-model = get_gender_model()
+x1_train, x1_val, x2_train, x2_val, y_train, y_val, creative_id_emb, ad_id_emb = get_train_val()
+
+
+# %%
+model = get_gender_model(creative_id_emb, ad_id_emb)
 # %%
 # 测试数据格式(batch_size, sequence长度)
 x1 = np.array([1, 2, 3, 4]).reshape(1, -1)
@@ -164,19 +184,18 @@ model.predict([x1, x2])
 
 
 # %%
-x1_train, x1_val, x2_train, x2_val, y_train, y_val = get_train_val()
 # %%
 checkpoint = ModelCheckpoint("tmp/gender_epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=0,
                              save_best_only=False, mode='auto', period=1)
 # %%
-model.fit(
-    {'creative_id': x1_train, 'ad_id': x2_train},
-    y_train,
-    validation_data=([x1_val, x2_val], y_val),
-    epochs=5,
-    batch_size=256,
-    callbacks=[checkpoint],
-)
+# model.fit(
+#     {'creative_id': x1_train, 'ad_id': x2_train},
+#     y_train,
+#     validation_data=([x1_val, x2_val], y_val),
+#     epochs=5,
+#     batch_size=256,
+#     callbacks=[checkpoint],
+# )
 
 # %%
 try:
