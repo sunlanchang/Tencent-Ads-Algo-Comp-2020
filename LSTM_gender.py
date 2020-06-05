@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from gensim.models import Word2Vec, KeyedVectors
-from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Dropout
+from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Dropout,
 from tensorflow.keras.models import Model, Sequential
 import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -21,9 +21,9 @@ debug = True
 
 # %%
 if debug:
-    # f = open('tmp/userid_creative_ids.txt')
-    f = open('word2vec/userid_creative_ids.txt')
+    f = open('tmp/userid_creative_ids.txt')
 else:
+    f = open('word2vec/userid_creative_ids.txt')
     pass
 num_creative_id = 2481135+1
 tokenizer = Tokenizer(num_words=num_creative_id)
