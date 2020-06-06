@@ -14,14 +14,6 @@ from mymail import mail
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-
-# %%
-
-debug = True
-
-# %%
-
-
 # %%
 # f = open('word2vec/userid_creative_ids.txt')
 # LEN_creative_id = -1
@@ -29,9 +21,6 @@ debug = True
 #     current_line_len = len(line.strip().split(' '))
 #     LEN_creative_id = max(LEN_creative_id, current_line_len)
 # f.close()
-
-
-# %%
 
 
 # %%
@@ -173,17 +162,15 @@ def get_gender_model(creative_id_emb, ad_id_emb):
 # %%
 x1_train, x1_val, x2_train, x2_val, y_train, y_val, creative_id_emb, ad_id_emb = get_train_val()
 
-
-# %%
 model = get_gender_model(creative_id_emb, ad_id_emb)
 # %%
-# 测试数据格式(batch_size, sequence长度)
-x1 = np.array([1, 2, 3, 4]).reshape(1, -1)
-x2 = np.array([1, 2, 3, 4]).reshape(1, -1)
-model.predict([x1, x2])
-
-
 # %%
+# 测试数据格式(batch_size, sequence长度)
+# x1 = np.array([1, 2, 3, 4]).reshape(1, -1)
+# x2 = np.array([1, 2, 3, 4]).reshape(1, -1)
+# model.predict([x1, x2])
+
+
 # %%
 checkpoint = ModelCheckpoint("tmp/gender_epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=0,
                              save_best_only=False, mode='auto', period=1)
@@ -215,33 +202,33 @@ except Exception as e:
 
 
 # %%
-model.load_weights('tmp\gender_epoch_01.hdf5')
+# model.load_weights('tmp\gender_epoch_01.hdf5')
 
 
-# %%
-if debug:
-    sequences = tokenizer.texts_to_sequences(
-        creative_id_seq[900000:])
-else:
-    sequences = tokenizer.texts_to_sequences(
-        creative_id_seq[900000:])
+# # %%
+# if debug:
+#     sequences = tokenizer.texts_to_sequences(
+#         creative_id_seq[900000:])
+# else:
+#     sequences = tokenizer.texts_to_sequences(
+#         creative_id_seq[900000:])
 
-X_test = pad_sequences(sequences, maxlen=LEN_creative_id)
-# %%
-y_pred = model.predict(X_test, batch_size=4096)
+# X_test = pad_sequences(sequences, maxlen=LEN_creative_id)
+# # %%
+# y_pred = model.predict(X_test, batch_size=4096)
 
-y_pred = np.where(y_pred > 0.5, 1, 0)
-y_pred = y_pred.flatten()
+# y_pred = np.where(y_pred > 0.5, 1, 0)
+# y_pred = y_pred.flatten()
 
-# %%
-y_pred = y_pred+1
-# %%
-res = pd.DataFrame({'predicted_gender': y_pred})
-res.to_csv(
-    'data/ans/lstm_gender.csv', header=True, columns=['predicted_gender'], index=False)
+# # %%
+# y_pred = y_pred+1
+# # %%
+# res = pd.DataFrame({'predicted_gender': y_pred})
+# res.to_csv(
+#     'data/ans/lstm_gender.csv', header=True, columns=['predicted_gender'], index=False)
 
 
-# %%
-mail('predict lstm gender done')
+# # %%
+# mail('predict lstm gender done')
 
 # %%
