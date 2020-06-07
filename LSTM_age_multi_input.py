@@ -12,6 +12,8 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 from mymail import mail
 import os
+from keras.utils import to_categorical
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # %%
@@ -132,6 +134,7 @@ def get_train_val():
     Y_age = user_train['age'].values
     Y_gender = Y_gender - 1
     Y_age = Y_age - 1
+    Y_age = to_categorical(Y_age)
     num_examples = Y_age.shape[0]
     train_examples = int(num_examples * 0.9)
 
