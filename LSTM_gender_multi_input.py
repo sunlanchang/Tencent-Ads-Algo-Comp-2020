@@ -38,7 +38,7 @@ def get_train_val():
     tokenizer.fit_on_texts(f)
     f.close()
     creative_id_seq = []
-    with open('word2vec/userid_creative_ids.txt') as f:
+    with open('word2vec/userid_creative_ids.txt', 'r') as f:
         for text in f:
             creative_id_seq.append(text.strip())
 
