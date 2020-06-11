@@ -45,8 +45,11 @@
     - [x] 3个特征+Dense (**accuracy: 1.05**)
     - [x] 6个128维特征+Conv 1D (**accuracy: 1.15**)
     - [x] 6个128维特征+Dense (**accuracy: 1.20**)
+    - [x] 6个128维特征+三层LSTM (**accuracy: 1.25**)
     - [x] 128维序列不做平均处理+LSTM Note: embedding跟随训练变化不是静态即trainable=True (**accuracy: 1.32**)
-- [ ] Transformer
+- [x] Transformer
+    - [x] 1层Transformer+1头注意力、ffm_dim=128、1层256的LSTM、3输入
+    - [ ] 1层Transformer+1头注意力、ffm_dim=128、1层256的LSTM、3输入、word2vwc初始化embedding
 - [ ] GNN生成user_id creative_id ad_id等的词嵌入后分类
     - [ ] +Dense
     - [ ] +RNN等序列模型

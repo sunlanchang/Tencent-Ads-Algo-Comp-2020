@@ -1,22 +1,20 @@
-# %%
-# 生成词嵌入文件
+# %%
 from tensorflow.keras import layers
 from tensorflow import keras
-from tqdm import tqdm
-import numpy as np
-import pandas as pd
-from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
-from gensim.models import Word2Vec, KeyedVectors
-from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Dropout, concatenate, Bidirectional
-from tensorflow.keras.models import Model, Sequential
-import tensorflow as tf
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.preprocessing.text import Tokenizer
-from mymail import mail
-import os
-from tensorflow.keras.utils import to_categorical
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
+import numpy as np
+from tqdm import tqdm
+import pandas as pd
+from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
+from gensim.models import Word2Vec, KeyedVectors
+from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Dropout, concatenate, Bidirectional
+from tensorflow.keras.models import Model, Sequential
+import tensorflow as tf
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+from mymail import mail
+import os
+from tensorflow.keras.utils import to_categorical
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # %%
 
 
@@ -239,6 +237,10 @@ NUM_creative_id = 2481135+1
 NUM_ad_id = 2264190+1
 NUM_product_id = 33273+1
 
+LEN_creative_id = 100
+LEN_ad_id = 100
+LEN_product_id = 100
+
 vocab_size = NUM_creative_id 
 maxlen = LEN_creative_id
 
@@ -259,7 +261,7 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
     x1 = TokenAndPositionEmbedding(
         maxlen, vocab_size, embed_dim)(input_creative_id)
     x1 = TransformerBlock(embed_dim, num_heads, ff_dim)(x1)
-    x1 = GlobalAveragePooling1D()(x1)
+    x1 = layers.GlobalAveragePooling1D()(x1)
     x1 = layers.Dropout(0.1)(x1)
     x1 = layers.Dense(20, activation="relu")(x1)
     x1 = layers.Dropout(0.1)(x1)
