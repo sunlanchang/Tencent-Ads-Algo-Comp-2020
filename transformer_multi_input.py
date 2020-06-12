@@ -404,7 +404,7 @@ model = get_age_model(creative_id_emb, ad_id_emb, product_id_emb)
 
 
 # %%
-checkpoint = ModelCheckpoint("tmp/age_epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=1,
+checkpoint = ModelCheckpoint("tmp/age_epoch_{epoch:02d}.hdf5", save_weights_only=True, monitor='val_loss', verbose=1,
                              save_best_only=False, mode='auto', period=1)
 # %%
 # model.fit(
@@ -416,16 +416,18 @@ checkpoint = ModelCheckpoint("tmp/age_epoch_{epoch:02d}.hdf5", monitor='val_loss
 #     callbacks=[checkpoint],
 # )
 # %%
-model.fit(
-    {'creative_id': x1_train[:10], 'ad_id': x2_train[:10],
-        'product_id': x3_train[:10]},
-    # {'creative_id': x1_train},
-    y_train[:10],
-    validation_data=([x1_val[:10], x2_val[:10], x3_val[:10]], y_val[:10]),
-    epochs=2,
-    batch_size=5,
-    callbacks=[checkpoint],
-)
+debug = False
+if debug:
+    model.fit(
+        {'creative_id': x1_train[:10], 'ad_id': x2_train[:10],
+            'product_id': x3_train[:10]},
+        # {'creative_id': x1_train},
+        y_train[:10],
+        validation_data=([x1_val[:10], x2_val[:10], x3_val[:10]], y_val[:10]),
+        epochs=2,
+        batch_size=5,
+        callbacks=[checkpoint],
+    )
 # %%
 try:
     mail('start train lstm')
@@ -445,7 +447,7 @@ except Exception as e:
 
 
 # %%
-# model.load_weights('tmp\gender_epoch_01.hdf5')
+# model.load_weights('tmp/gender_epoch_01.hdf5')
 
 
 # # %%
