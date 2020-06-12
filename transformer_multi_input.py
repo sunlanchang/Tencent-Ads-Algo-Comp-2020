@@ -1,8 +1,9 @@
 # %%
+# 生成词嵌入文件
 from tensorflow.keras import layers
 from tensorflow import keras
-import numpy as np
 from tqdm import tqdm
+import numpy as np
 import pandas as pd
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from gensim.models import Word2Vec, KeyedVectors
@@ -15,6 +16,7 @@ from mymail import mail
 import os
 from tensorflow.keras.utils import to_categorical
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
 # %%
 
 
@@ -73,8 +75,22 @@ class MultiHeadSelfAttention(layers.Layer):
         )  # (batch_size, seq_len, embed_dim)
         return output
 
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'embed_dim': self.embed_dim,
+            'num_heads': self.num_heads,
+            'projection_dim': self.projection_dim,
+            'query_dense': self.query_dense,
+            'key_dense': self.key_dense,
+            'value_dense': self.value_dense,
+            'combine_heads': self.combine_heads,
+        })
+        return config
 
-# %%
+# %%
+
+
 class TransformerBlock(layers.Layer):
     def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
         super(TransformerBlock, self).__init__()
@@ -96,6 +112,17 @@ class TransformerBlock(layers.Layer):
         ffn_output = self.dropout2(ffn_output, training=training)
         return self.layernorm2(out1 + ffn_output)
 
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'att': self.att,
+            'ffn': self.ffn,
+            'layernorm1': self.layernorm1,
+            'layernorm2': self.layernorm2,
+            'dropout1': self.dropout1,
+            'dropout2': self.dropout2,
+        })
+        return config
 # %%
 
 
@@ -112,15 +139,122 @@ class TokenAndPositionEmbedding(layers.Layer):
         positions = self.pos_emb(positions)
         x = self.token_emb(x)
         return x + positions
-# f = open('word2vec/userid_creative_ids.txt')
-# LEN_creative_id = -1
-# for line in f:
-#     current_line_len = len(line.strip().split(' '))
-#     LEN_creative_id = max(LEN_creative_id, current_line_len)
-# f.close()
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'token_emb': self.token_emb,
+            'pos_emb': self.pos_emb,
+        })
+        return config
+# f = open('word2vec/userid_creative_ids.txt')
+# LEN_creative_id = -1
+# for line in f:
+#     current_line_len = len(line.strip().split(' '))
+#     LEN_creative_id = max(LEN_creative_id, current_line_len)
+# f.close()
 
 
 # %%
+NUM_creative_id = 2481135+1
+NUM_ad_id = 2264190+1
+NUM_product_id = 33273+1
+
+LEN_creative_id = 100
+LEN_ad_id = 100
+LEN_product_id = 100
+
+# vocab_size = NUM_creative_id
+maxlen = 100
+
+
+def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
+    embed_dim = 128  # Embedding size for each token
+    num_heads = 1  # Number of attention heads
+    ff_dim = 128  # Hidden layer size in feed forward network inside transformer
+    # shape：(sequence长度, )
+    # first input
+    input_creative_id = Input(shape=(None,), name='creative_id')
+    # x1 = Embedding(input_dim=NUM_creative_id,
+    #                output_dim=128,
+    #                weights=[creative_id_emb],
+    #                trainable=True,
+    #                input_length=LEN_creative_id,
+    #                mask_zero=True)(input_creative_id)
+    x1 = TokenAndPositionEmbedding(
+        maxlen, NUM_creative_id, embed_dim)(input_creative_id)
+    x1 = TransformerBlock(embed_dim, num_heads, ff_dim)(x1)
+    # x1 = layers.GlobalAveragePooling1D()(x1)
+    # x1 = layers.Dropout(0.1)(x1)
+    x1 = LSTM(256)(x1)
+    x1 = layers.Dense(20, activation="relu")(x1)
+    # x1 = layers.Dropout(0.1)(x1)
+    # outputs = layers.Dense(10, activation="softmax")(x1)
+
+    # x1 = LSTM(1024, return_sequences=True)(x1)
+    # x1 = LSTM(512, return_sequences=True)(x1)
+    # x1 = LSTM(256, return_sequences=False)(x1)
+
+    # second input
+    input_ad_id = Input(shape=(None,), name='ad_id')
+    # x2 = Embedding(input_dim=NUM_ad_id,
+    #                output_dim=128,
+    #                weights=[ad_id_emb],
+    #                trainable=True,
+    #                input_length=LEN_ad_id,
+    #                mask_zero=True)(input_ad_id)
+    # x2 = LSTM(1024, return_sequences=True)(x2)
+    # x2 = LSTM(512, return_sequences=True)(x2)
+    # x2 = LSTM(256, return_sequences=False)(x2)
+    x2 = TokenAndPositionEmbedding(
+        maxlen, NUM_ad_id, embed_dim)(input_ad_id)
+    x2 = TransformerBlock(embed_dim, num_heads, ff_dim)(x2)
+    # x2 = layers.GlobalAveragePooling1D()(x2)
+    # x2 = layers.Dropout(0.1)(x2)
+    x2 = LSTM(256)(x2)
+    x2 = layers.Dense(20, activation="relu")(x2)
+    # x2 = layers.Dense(20, activation="relu")(x2)
+    # x2 = layers.Dropout(0.1)(x2)
+
+    # third input
+    input_product_id = Input(shape=(None,), name='product_id')
+    # x3 = Embedding(input_dim=NUM_product_id,
+    #                output_dim=128,
+    #                weights=[product_id_emb],
+    #                trainable=True,
+    #                input_length=LEN_product_id,
+    #                mask_zero=True)(input_product_id)
+    # x3 = LSTM(1024, return_sequences=True)(x3)
+    # x3 = LSTM(512, return_sequences=True)(x3)
+    # x3 = LSTM(256, return_sequences=False)(x3)
+    x3 = TokenAndPositionEmbedding(
+        maxlen, NUM_product_id, embed_dim)(input_product_id)
+    x3 = TransformerBlock(embed_dim, num_heads, ff_dim)(x3)
+    # x3 = layers.GlobalAveragePooling1D()(x3)
+    # x3 = layers.Dropout(0.1)(x3)
+    x3 = LSTM(256)(x3)
+    x3 = layers.Dense(20, activation="relu")(x3)
+    # x3 = layers.Dense(20, activation="relu")(x3)
+    # x3 = layers.Dropout(0.1)(x3)
+
+    # concat x1 x2 x3
+    x = concatenate([x1, x2, x3])
+    # x = x1 + x2 + x3
+    x = Dense(20)(x)
+    # x = Dropout(0.1)(x)
+    output_y = Dense(10, activation='softmax')(x)
+
+    model = Model([input_creative_id, input_ad_id, input_product_id], output_y)
+    # model = Model(input_creative_id, outputs)
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='adam', metrics=['accuracy'])
+    model.summary()
+
+    return model
+
+# %%
+
+
 def get_train_val():
 
     # 获取 creative_id 特征
@@ -153,7 +287,7 @@ def get_train_val():
                 embedding_matrix[index] = embedding_vector
         return embedding_matrix
 
-    creative_id_emb = get_creative_id_emb()
+    # creative_id_emb = get_creative_id_emb()
 
     # 获取 ad_id 特征
     f = open('word2vec/userid_ad_ids.txt')
@@ -183,7 +317,7 @@ def get_train_val():
                 embedding_matrix[index] = embedding_vector
         return embedding_matrix
 
-    ad_id_emb = get_ad_id_emb()
+    # ad_id_emb = get_ad_id_emb()
 
     # 获取 product_id 特征
     # f = open('tmp/userid_product_ids.txt')
@@ -215,7 +349,7 @@ def get_train_val():
                 embedding_matrix[index] = embedding_vector
         return embedding_matrix
 
-    product_id_emb = get_product_id_emb()
+    # product_id_emb = get_product_id_emb()
 
     # 获得age标签
     user_train = pd.read_csv(
@@ -229,94 +363,39 @@ def get_train_val():
     train_examples = int(num_examples * 0.9)
 
     # 分别对应 x1_train x1_val x2_train x2_val y_train y_val
-    return X1_train[:train_examples], X1_train[train_examples:], X2_train[:train_examples], X2_train[train_examples:], X3_train[:train_examples], X3_train[train_examples:], Y_age[:train_examples], Y_age[train_examples:], creative_id_emb, ad_id_emb, product_id_emb
-
-
-# %%
-NUM_creative_id = 2481135+1
-NUM_ad_id = 2264190+1
-NUM_product_id = 33273+1
-
-LEN_creative_id = 100
-LEN_ad_id = 100
-LEN_product_id = 100
-
-vocab_size = NUM_creative_id 
-maxlen = LEN_creative_id
-
-
-def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
-    embed_dim = 128  # Embedding size for each token
-    num_heads = 2  # Number of attention heads
-    ff_dim = 32  # Hidden layer size in feed forward network inside transformer
-    # shape：(sequence长度, )
-    # first input
-    input_creative_id = Input(shape=(None,), name='creative_id')
-    # x1 = Embedding(input_dim=NUM_creative_id,
-    #                output_dim=128,
-    #                weights=[creative_id_emb],
-    #                trainable=True,
-    #                input_length=LEN_creative_id,
-    #                mask_zero=True)(input_creative_id)
-    x1 = TokenAndPositionEmbedding(
-        maxlen, vocab_size, embed_dim)(input_creative_id)
-    x1 = TransformerBlock(embed_dim, num_heads, ff_dim)(x1)
-    x1 = layers.GlobalAveragePooling1D()(x1)
-    x1 = layers.Dropout(0.1)(x1)
-    x1 = layers.Dense(20, activation="relu")(x1)
-    x1 = layers.Dropout(0.1)(x1)
-    outputs = layers.Dense(10, activation="softmax")(x1)
-    # x1 = LSTM(1024, return_sequences=True)(x1)
-    # x1 = LSTM(512, return_sequences=True)(x1)
-    # x1 = LSTM(256, return_sequences=False)(x1)
-
-    # second input
-    # input_ad_id = Input(shape=(None,), name='ad_id')
-    # x2 = Embedding(input_dim=NUM_ad_id,
-    #                output_dim=128,
-    #                weights=[ad_id_emb],
-    #                trainable=True,
-    #                input_length=LEN_ad_id,
-    #                mask_zero=True)(input_ad_id)
-    # x2 = LSTM(1024, return_sequences=True)(x2)
-    # x2 = LSTM(512, return_sequences=True)(x2)
-    # x2 = LSTM(256, return_sequences=False)(x2)
-
-    # third input
-    # input_product_id = Input(shape=(None,), name='product_id')
-    # x3 = Embedding(input_dim=NUM_product_id,
-    #                output_dim=128,
-    #                weights=[product_id_emb],
-    #                trainable=True,
-    #                input_length=LEN_product_id,
-    #                mask_zero=True)(input_product_id)
-    # x3 = LSTM(1024, return_sequences=True)(x3)
-    # x3 = LSTM(512, return_sequences=True)(x3)
-    # x3 = LSTM(256, return_sequences=False)(x3)
-
-    # concat x1 x2
-    # x = concatenate([x1, x2, x3])
-    # x = x1 + x2 + x3
-    # x = Dense(128)(x)
-    # x = Dropout(0.1)(x)
-    # output_y = Dense(10, activation='softmax')(x)
-
-    # model = Model([input_creative_id, input_ad_id, input_product_id], output_y)
-    model = Model(input_creative_id, outputs)
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='adam', metrics=['accuracy'])
-    model.summary()
-
-    return model
+    # return X1_train[:train_examples], X1_train[train_examples:], X2_train[:train_examples], X2_train[train_examples:], X3_train[:train_examples], X3_train[train_examples:], Y_age[:train_examples], Y_age[train_examples:], creative_id_emb, ad_id_emb, product_id_emb
+    return X1_train[:train_examples], X1_train[train_examples:], X2_train[:train_examples], X2_train[train_examples:], X3_train[:train_examples], X3_train[train_examples:], Y_age[:train_examples], Y_age[train_examples:], None, None, None
 
 
 # %%
-mail('start getting train data')
-x1_train, x1_val, x2_train, x2_val, x3_train, x3_val, y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb = get_train_val()
-mail('get train data done.')
+save = True
+if not save:
+    mail('start getting train data')
+    x1_train, x1_val, x2_train, x2_val, x3_train, x3_val, y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb = get_train_val()
+    mail('get train data done.')
 
+    def save_data(datas):
+        for i, data in enumerate(datas):
+            np.save(f'tmp/transformer_input_{i}.npy', data)
+    datas = [x1_train, x1_val, x2_train, x2_val, x3_train, x3_val,
+             y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb]
+    save_data(datas)
+else:
+    x1_train = np.load('tmp/transformer_input_0.npy', allow_pickle=True)
+    x1_val = np.load('tmp/transformer_input_1.npy', allow_pickle=True)
+    x2_train = np.load('tmp/transformer_input_2.npy', allow_pickle=True)
+    x2_val = np.load('tmp/transformer_input_3.npy', allow_pickle=True)
+    x3_train = np.load('tmp/transformer_input_4.npy', allow_pickle=True)
+    x3_val = np.load('tmp/transformer_input_5.npy', allow_pickle=True)
+    y_train = np.load('tmp/transformer_input_6.npy', allow_pickle=True)
+    y_val = np.load('tmp/transformer_input_7.npy', allow_pickle=True)
+    creative_id_emb = np.load('tmp/transformer_input_8.npy', allow_pickle=True)
+    ad_id_emb = np.load('tmp/transformer_input_9.npy', allow_pickle=True)
+    product_id_emb = np.load('tmp/transformer_input_10.npy', allow_pickle=True)
+
+
+# %%
 model = get_age_model(creative_id_emb, ad_id_emb, product_id_emb)
-# %%
 # %%
 # 测试数据格式(batch_size, sequence长度)
 # x1 = np.array([1, 2, 3, 4]).reshape(1, -1)
@@ -336,16 +415,27 @@ checkpoint = ModelCheckpoint("tmp/age_epoch_{epoch:02d}.hdf5", monitor='val_loss
 #     batch_size=256,
 #     callbacks=[checkpoint],
 # )
-
+# %%
+model.fit(
+    {'creative_id': x1_train[:10], 'ad_id': x2_train[:10],
+        'product_id': x3_train[:10]},
+    # {'creative_id': x1_train},
+    y_train[:10],
+    validation_data=([x1_val[:10], x2_val[:10], x3_val[:10]], y_val[:10]),
+    epochs=2,
+    batch_size=5,
+    callbacks=[checkpoint],
+)
 # %%
 try:
     mail('start train lstm')
     model.fit(
         {'creative_id': x1_train, 'ad_id': x2_train, 'product_id': x3_train},
+        # {'creative_id': x1_train},
         y_train,
         validation_data=([x1_val, x2_val, x3_val], y_val),
-        epochs=3,
-        batch_size=256,
+        epochs=5,
+        batch_size=1024,
         callbacks=[checkpoint],
     )
     mail('train lstm done!!!')
