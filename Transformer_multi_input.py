@@ -15,8 +15,19 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from mymail import mail
 import os
 from tensorflow.keras.utils import to_categorical
+import argparse
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
+
+# %%
+parser = argparse.ArgumentParser()
+parser.add_argument('--load_from_npy', action='store_true',
+                    help='从npy文件加载数据',
+                    default=False)
+parser.add_argument('--batch_size', type=int,
+                    help='batch size大小',
+                    default=256)
+args = parser.parse_args()
 # %%
 
 
@@ -162,7 +173,7 @@ class TokenAndPositionEmbedding(layers.Layer):
 
 
 # %%
-NUM_creative_id = 2481135+1 # embedding词表大小+1，其中+1为了未出现在此表中的UNK词
+NUM_creative_id = 2481135+1  # embedding词表大小+1，其中+1为了未出现在此表中的UNK词
 NUM_ad_id = 2264190+1
 NUM_product_id = 33273+1
 
@@ -204,11 +215,11 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
     # second input
     input_ad_id = Input(shape=(None,), name='ad_id')
     # x2 = Embedding(input_dim=NUM_ad_id,
-    #                output_dim=128,
-    #                weights=[ad_id_emb],
-    #                trainable=True,
-    #                input_length=LEN_ad_id,
-    #                mask_zero=True)(input_ad_id)
+    #                 output_dim=128,
+    #                 weights=[ad_id_emb],
+    #                 trainable=True,
+    #                 input_length=LEN_ad_id,
+    #                 mask_zero=True)(input_ad_id)
 
     x2 = TokenAndPositionEmbedding(
         maxlen, NUM_ad_id, embed_dim, ad_id_emb)(input_ad_id)
@@ -376,8 +387,7 @@ def get_train_val():
 
 
 # %%
-load_from_npy = True
-if not load_from_npy:
+if not args.load_from_npy:
     mail('start getting train data')
     x1_train, x1_val, x2_train, x2_val, x3_train, x3_val, y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb = get_train_val()
     mail('get train data done.')
@@ -445,7 +455,7 @@ try:
         y_train,
         validation_data=([x1_val, x2_val, x3_val], y_val),
         epochs=5,
-        batch_size=256,
+        batch_size=args.batch_size,
         callbacks=[checkpoint],
     )
     mail('train lstm done!!!')
