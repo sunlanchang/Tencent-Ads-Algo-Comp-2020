@@ -162,7 +162,7 @@ class TokenAndPositionEmbedding(layers.Layer):
 
 
 # %%
-NUM_creative_id = 2481135+1
+NUM_creative_id = 2481135+1 # embedding词表大小+1，其中+1为了未出现在此表中的UNK词
 NUM_ad_id = 2264190+1
 NUM_product_id = 33273+1
 
