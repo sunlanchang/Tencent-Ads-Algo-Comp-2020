@@ -36,6 +36,9 @@ parser.add_argument('--num_transformer', type=int,
 parser.add_argument('--head_transformer', type=int,
                     help='transformer head个数',
                     default=1)
+parser.add_argument('--num_lstm', type=int,
+                    help='LSTM head个数',
+                    default=0)
 args = parser.parse_args()
 # %%
 
@@ -218,9 +221,9 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
     # x1 = layers.Dropout(0.1)(x1)
     # outputs = layers.Dense(10, activation="softmax")(x1)
 
-    x1 = LSTM(1024, return_sequences=True)(x1)
-    x1 = LSTM(512, return_sequences=True)(x1)
-    x1 = LSTM(256, return_sequences=False)(x1)
+    for _ in range(args.num_lstm):
+        x1 = Bidirectional(LSTM(256, return_sequences=True))(x1)
+    x1 = Bidirectional(LSTM(256, return_sequences=False))(x1)
 
     # second input
     input_ad_id = Input(shape=(None,), name='ad_id')
@@ -235,9 +238,9 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
         maxlen, NUM_ad_id, embed_dim, ad_id_emb)(input_ad_id)
     for _ in range(args.num_transformer):
         x2 = TransformerBlock(embed_dim, num_heads, ff_dim)(x2)
-    x2 = LSTM(1024, return_sequences=True)(x2)
-    x2 = LSTM(512, return_sequences=True)(x2)
-    x2 = LSTM(256, return_sequences=False)(x2)
+    for _ in range(args.num_lstm):
+        x2 = Bidirectional(LSTM(256, return_sequences=True))(x2)
+    x2 = Bidirectional(LSTM(256, return_sequences=False))(x2)
     # x2 = layers.GlobalAveragePooling1D()(x2)
     # x2 = layers.Dropout(0.1)(x2)
     # x2 = LSTM(256)(x2)
@@ -258,9 +261,9 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
         maxlen, NUM_product_id, embed_dim, product_id_emb)(input_product_id)
     for _ in range(args.num_transformer):
         x3 = TransformerBlock(embed_dim, num_heads, ff_dim)(x3)
-    x3 = LSTM(1024, return_sequences=True)(x3)
-    x3 = LSTM(512, return_sequences=True)(x3)
-    x3 = LSTM(256, return_sequences=False)(x3)
+    for _ in range(args.num_lstm):
+        x3 = Bidirectional(LSTM(256, return_sequences=True))(x3)
+    x3 = Bidirectional(LSTM(256, return_sequences=False))(x3)
     # x3 = layers.GlobalAveragePooling1D()(x3)
     # x3 = layers.Dropout(0.1)(x3)
     # x3 = LSTM(256)(x3)
