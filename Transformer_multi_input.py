@@ -44,7 +44,7 @@ parser.add_argument('--num_lstm', type=int,
                     default=0)
 parser.add_argument('--examples', type=int,
                     help='数据个数',
-                    default=100000)
+                    default=900000)
 args = parser.parse_args()
 # %%
 
