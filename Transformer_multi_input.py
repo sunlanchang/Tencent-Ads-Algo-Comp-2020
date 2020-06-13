@@ -27,6 +27,12 @@ parser.add_argument('--load_from_npy', action='store_true',
 parser.add_argument('--batch_size', type=int,
                     help='batch size大小',
                     default=256)
+parser.add_argument('--num_transformer', type=int,
+                    help='transformer层数',
+                    default=1)
+parser.add_argument('--head_transformer', type=int,
+                    help='transformer head个数',
+                    default=1)
 args = parser.parse_args()
 # %%
 
@@ -200,7 +206,8 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
     #                mask_zero=True)(input_creative_id)
     x1 = TokenAndPositionEmbedding(
         maxlen, NUM_creative_id, embed_dim, creative_id_emb)(input_creative_id)
-    x1 = TransformerBlock(embed_dim, num_heads, ff_dim)(x1)
+    for _ in range(parser.num_transformer):
+        x1 = TransformerBlock(embed_dim, num_heads, ff_dim)(x1)
     # x1 = layers.GlobalAveragePooling1D()(x1)
     # x1 = layers.Dropout(0.1)(x1)
     # x1 = LSTM(256)(x1)
@@ -223,7 +230,8 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
 
     x2 = TokenAndPositionEmbedding(
         maxlen, NUM_ad_id, embed_dim, ad_id_emb)(input_ad_id)
-    x2 = TransformerBlock(embed_dim, num_heads, ff_dim)(x2)
+    for _ in range(parser.num_transformer):
+        x2 = TransformerBlock(embed_dim, num_heads, ff_dim)(x2)
     x2 = LSTM(1024, return_sequences=True)(x2)
     x2 = LSTM(512, return_sequences=True)(x2)
     x2 = LSTM(256, return_sequences=False)(x2)
@@ -245,7 +253,8 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
 
     x3 = TokenAndPositionEmbedding(
         maxlen, NUM_product_id, embed_dim, product_id_emb)(input_product_id)
-    x3 = TransformerBlock(embed_dim, num_heads, ff_dim)(x3)
+    for _ in range(parser.num_transformer):
+        x3 = TransformerBlock(embed_dim, num_heads, ff_dim)(x3)
     x3 = LSTM(1024, return_sequences=True)(x3)
     x3 = LSTM(512, return_sequences=True)(x3)
     x3 = LSTM(256, return_sequences=False)(x3)
