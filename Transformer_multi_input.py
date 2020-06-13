@@ -30,6 +30,9 @@ parser.add_argument('--not_train_embedding', action='store_false',
 parser.add_argument('--batch_size', type=int,
                     help='batch size大小',
                     default=256)
+parser.add_argument('--epoch', type=int,
+                    help='epoch 大小',
+                    default=5)
 parser.add_argument('--num_transformer', type=int,
                     help='transformer层数',
                     default=1)
@@ -39,6 +42,9 @@ parser.add_argument('--head_transformer', type=int,
 parser.add_argument('--num_lstm', type=int,
                     help='LSTM head个数',
                     default=0)
+parser.add_argument('--examples', type=int,
+                    help='数据个数',
+                    default=100000)
 args = parser.parse_args()
 # %%
 
@@ -167,7 +173,9 @@ class TokenAndPositionEmbedding(layers.Layer):
         positions = tf.range(start=0, limit=maxlen, delta=1)
         positions = self.pos_emb(positions)
         x = self.token_emb(x)
-        return x + positions
+        # 忽略位置编码
+        # return x + positions
+        return x
 
     def get_config(self):
         config = super().get_config().copy()
@@ -200,7 +208,7 @@ maxlen = 100
 def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
     embed_dim = 128  # Embedding size for each token
     num_heads = 1  # Number of attention heads
-    ff_dim = 128  # Hidden layer size in feed forward network inside transformer
+    ff_dim = 256  # Hidden layer size in feed forward network inside transformer
     # shape：(sequence长度, )
     # first input
     input_creative_id = Input(shape=(None,), name='creative_id')
@@ -214,7 +222,6 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
         maxlen, NUM_creative_id, embed_dim, creative_id_emb)(input_creative_id)
     for _ in range(args.num_transformer):
         x1 = TransformerBlock(embed_dim, num_heads, ff_dim)(x1)
-    # x1 = layers.GlobalAveragePooling1D()(x1)
     # x1 = layers.Dropout(0.1)(x1)
     # x1 = LSTM(256)(x1)
     # x1 = layers.Dense(20, activation="relu")(x1)
@@ -223,7 +230,8 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
 
     for _ in range(args.num_lstm):
         x1 = Bidirectional(LSTM(256, return_sequences=True))(x1)
-    x1 = Bidirectional(LSTM(256, return_sequences=False))(x1)
+    # x1 = Bidirectional(LSTM(256, return_sequences=False))(x1)
+    x1 = layers.GlobalMaxPooling1D()(x1)
 
     # second input
     input_ad_id = Input(shape=(None,), name='ad_id')
@@ -240,8 +248,8 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
         x2 = TransformerBlock(embed_dim, num_heads, ff_dim)(x2)
     for _ in range(args.num_lstm):
         x2 = Bidirectional(LSTM(256, return_sequences=True))(x2)
-    x2 = Bidirectional(LSTM(256, return_sequences=False))(x2)
-    # x2 = layers.GlobalAveragePooling1D()(x2)
+    # x2 = Bidirectional(LSTM(256, return_sequences=False))(x2)
+    x2 = layers.GlobalMaxPooling1D()(x2)
     # x2 = layers.Dropout(0.1)(x2)
     # x2 = LSTM(256)(x2)
     # x2 = layers.Dense(20, activation="relu")(x2)
@@ -263,8 +271,8 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
         x3 = TransformerBlock(embed_dim, num_heads, ff_dim)(x3)
     for _ in range(args.num_lstm):
         x3 = Bidirectional(LSTM(256, return_sequences=True))(x3)
-    x3 = Bidirectional(LSTM(256, return_sequences=False))(x3)
-    # x3 = layers.GlobalAveragePooling1D()(x3)
+    # x3 = Bidirectional(LSTM(256, return_sequences=False))(x3)
+    x3 = layers.GlobalMaxPooling1D()(x3)
     # x3 = layers.Dropout(0.1)(x3)
     # x3 = LSTM(256)(x3)
     # x3 = layers.Dense(20, activation="relu")(x3)
@@ -464,12 +472,13 @@ if debug:
 # %%
 try:
     mail('start train lstm')
+    examples = args.examples
     model.fit(
-        {'creative_id': x1_train[:100000], 'ad_id': x2_train[:100000],
-            'product_id': x3_train[:100000]},
-        y_train[:100000],
+        {'creative_id': x1_train[:examples], 'ad_id': x2_train[:examples],
+            'product_id': x3_train[:examples]},
+        y_train[:examples],
         validation_data=([x1_val, x2_val, x3_val], y_val),
-        epochs=5,
+        epochs=args.epoch,
         batch_size=args.batch_size,
         callbacks=[checkpoint],
     )
