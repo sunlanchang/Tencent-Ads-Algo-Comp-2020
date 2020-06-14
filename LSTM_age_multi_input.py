@@ -280,10 +280,12 @@ checkpoint = ModelCheckpoint("tmp/age_epoch_{epoch:02d}.hdf5", monitor='val_loss
 
 # %%
 try:
+    examples = args.examples
     mail('start train lstm')
     model.fit(
-        {'creative_id': x1_train, 'ad_id': x2_train, 'product_id': x3_train},
-        y_train,
+        {'creative_id': x1_train[:examples], 'ad_id': x2_train[:examples],
+            'product_id': x3_train[:examples]},
+        y_train[:examples],
         validation_data=([x1_val, x2_val, x3_val], y_val),
         epochs=args.epoch,
         batch_size=args.batch_size,
