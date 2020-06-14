@@ -1,19 +1,20 @@
 # %%
 # 生成词嵌入文件
-from tqdm import tqdm
+import os
+import tensorflow as tf
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
-from gensim.models import Word2Vec, KeyedVectors
-from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Dropout, concatenate
+from tensorflow.keras import layers
+from tensorflow.keras.layers import Input, LSTM, Bidirectional, Embedding, Dense, Dropout, concatenate
 from tensorflow.keras.models import Model, Sequential
-import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.utils import to_categorical
+from gensim.models import Word2Vec, KeyedVectors
 from mymail import mail
-import os
-from keras.utils import to_categorical
-
+import argparse
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # %%
@@ -23,8 +24,31 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 #     current_line_len = len(line.strip().split(' '))
 #     LEN_creative_id = max(LEN_creative_id, current_line_len)
 # f.close()
+# %%
+parser = argparse.ArgumentParser()
+parser.add_argument('--load_from_npy', action='store_true',
+                    help='从npy文件加载数据',
+                    default=False)
+parser.add_argument('--not_train_embedding', action='store_false',
+                    help='从npy文件加载数据',
+                    default=True)
+
+parser.add_argument('--epoch', type=int,
+                    help='epoch 大小',
+                    default=5)
+parser.add_argument('--batch_size', type=int,
+                    help='batch size大小',
+                    default=256)
+parser.add_argument('--examples', type=int,
+                    help='训练数据，默认为训练集，不包含验证集',
+                    default=810000)
 
 
+parser.add_argument('--num_lstm', type=int,
+                    help='LSTM head个数',
+                    default=1)
+
+args = parser.parse_args()
 # %%
 NUM_creative_id = 2481135+1
 NUM_ad_id = 2264190+1
@@ -161,41 +185,41 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
     x1 = Embedding(input_dim=NUM_creative_id,
                    output_dim=128,
                    weights=[creative_id_emb],
-                   trainable=True,
+                   trainable=args.not_train_embedding,
                    input_length=LEN_creative_id,
                    mask_zero=True)(input_creative_id)
-    x1 = LSTM(1024, return_sequences=True)(x1)
-    x1 = LSTM(512, return_sequences=True)(x1)
-    x1 = LSTM(256, return_sequences=False)(x1)
+    for _ in range(args.num_lstm):
+        x1 = Bidirectional(LSTM(256, return_sequences=True))(x1)
+    x1 = layers.GlobalMaxPooling1D()(x1)
 
     # second input
     input_ad_id = Input(shape=(None,), name='ad_id')
     x2 = Embedding(input_dim=NUM_ad_id,
                    output_dim=128,
                    weights=[ad_id_emb],
-                   trainable=True,
+                   trainable=args.not_train_embedding,
                    input_length=LEN_ad_id,
                    mask_zero=True)(input_ad_id)
-    x2 = LSTM(1024, return_sequences=True)(x2)
-    x2 = LSTM(512, return_sequences=True)(x2)
-    x2 = LSTM(256, return_sequences=False)(x2)
+    for _ in range(args.num_lstm):
+        x2 = Bidirectional(LSTM(256, return_sequences=True))(x2)
+    x2 = layers.GlobalMaxPooling1D()(x2)
 
     # third input
     input_product_id = Input(shape=(None,), name='product_id')
     x3 = Embedding(input_dim=NUM_product_id,
                    output_dim=128,
                    weights=[product_id_emb],
-                   trainable=True,
+                   trainable=args.not_train_embedding,
                    input_length=LEN_product_id,
                    mask_zero=True)(input_product_id)
-    x3 = LSTM(1024, return_sequences=True)(x3)
-    x3 = LSTM(512, return_sequences=True)(x3)
-    x3 = LSTM(256, return_sequences=False)(x3)
+    for _ in range(args.num_lstm):
+        x3 = Bidirectional(LSTM(256, return_sequences=True))(x3)
+    x3 = layers.GlobalMaxPooling1D()(x3)
 
     # concat x1 x2
     x = concatenate([x1, x2, x3])
-    x = Dense(128)(x)
-    x = Dropout(0.1)(x)
+    # x = Dense(128)(x)
+    # x = Dropout(0.1)(x)
     output_y = Dense(10, activation='softmax')(x)
 
     model = Model([input_creative_id, input_ad_id, input_product_id], output_y)
@@ -207,10 +231,31 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
 
 
 # %%
-mail('start getting train data')
-x1_train, x1_val, x2_train, x2_val, x3_train, x3_val, y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb = get_train_val()
-mail('get train data done.')
+if not args.load_from_npy:
+    mail('start getting train data')
+    x1_train, x1_val, x2_train, x2_val, x3_train, x3_val, y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb = get_train_val()
+    mail('get train data done.')
 
+    def save_data(datas):
+        for i, data in enumerate(datas):
+            np.save(f'tmp/transformer_input_{i}.npy', data)
+    datas = [x1_train, x1_val, x2_train, x2_val, x3_train, x3_val,
+             y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb]
+    save_data(datas)
+else:
+    x1_train = np.load('tmp/transformer_input_0.npy', allow_pickle=True)
+    x1_val = np.load('tmp/transformer_input_1.npy', allow_pickle=True)
+    x2_train = np.load('tmp/transformer_input_2.npy', allow_pickle=True)
+    x2_val = np.load('tmp/transformer_input_3.npy', allow_pickle=True)
+    x3_train = np.load('tmp/transformer_input_4.npy', allow_pickle=True)
+    x3_val = np.load('tmp/transformer_input_5.npy', allow_pickle=True)
+    y_train = np.load('tmp/transformer_input_6.npy', allow_pickle=True)
+    y_val = np.load('tmp/transformer_input_7.npy', allow_pickle=True)
+    creative_id_emb = np.load('tmp/transformer_input_8.npy', allow_pickle=True)
+    ad_id_emb = np.load('tmp/transformer_input_9.npy', allow_pickle=True)
+    product_id_emb = np.load('tmp/transformer_input_10.npy', allow_pickle=True)
+
+# %%
 model = get_age_model(creative_id_emb, ad_id_emb, product_id_emb)
 # %%
 # %%
@@ -240,8 +285,8 @@ try:
         {'creative_id': x1_train, 'ad_id': x2_train, 'product_id': x3_train},
         y_train,
         validation_data=([x1_val, x2_val, x3_val], y_val),
-        epochs=3,
-        batch_size=256,
+        epochs=args.epoch,
+        batch_size=args.batch_size,
         callbacks=[checkpoint],
     )
     mail('train lstm done!!!')

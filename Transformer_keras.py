@@ -41,10 +41,10 @@ parser.add_argument('--head_transformer', type=int,
                     default=1)
 parser.add_argument('--num_lstm', type=int,
                     help='LSTM head个数',
-                    default=0)
+                    default=1)
 parser.add_argument('--examples', type=int,
-                    help='数据个数',
-                    default=900000)
+                    help='训练数据，默认为训练集，不包含验证集',
+                    default=810000)
 args = parser.parse_args()
 # %%
 
@@ -230,7 +230,6 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
 
     for _ in range(args.num_lstm):
         x1 = Bidirectional(LSTM(256, return_sequences=True))(x1)
-    # x1 = Bidirectional(LSTM(256, return_sequences=False))(x1)
     x1 = layers.GlobalMaxPooling1D()(x1)
 
     # second input
