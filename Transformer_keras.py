@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from gensim.models import Word2Vec, KeyedVectors
-from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Dropout, concatenate, Bidirectional
+from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Dropout, Concatenate, Bidirectional
 from tensorflow.keras.models import Model, Sequential
 import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -18,6 +18,9 @@ from tensorflow.keras.utils import to_categorical
 import argparse
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
+'''
+python Transformer_keras.py --load_from_npy --batch_size 256 --epoch 5 --num_transformer 1 --head_transformer 1 --num_lstm 1 --examples 100000
+'''
 
 # %%
 parser = argparse.ArgumentParser()
@@ -40,7 +43,7 @@ parser.add_argument('--head_transformer', type=int,
                     help='transformer head个数',
                     default=1)
 parser.add_argument('--num_lstm', type=int,
-                    help='LSTM head个数',
+                    help='LSTM 个数',
                     default=1)
 parser.add_argument('--examples', type=int,
                     help='训练数据，默认为训练集，不包含验证集',
@@ -262,7 +265,7 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
 
 
 # %%
-def get_age_model_test(creative_id_emb, ad_id_emb, product_id_emb):
+def get_model_head_concat(creative_id_emb, ad_id_emb, product_id_emb):
     embed_dim = 128  # Embedding size for each token
     num_heads = 1  # Number of attention heads
     ff_dim = 256  # Hidden layer size in feed forward network inside transformer
@@ -280,7 +283,8 @@ def get_age_model_test(creative_id_emb, ad_id_emb, product_id_emb):
     x3 = TokenAndPositionEmbedding(
         maxlen, NUM_product_id, embed_dim, product_id_emb)(input_product_id)
 
-    x = concatenate([x1, x2, x3])
+    # x = concatenate([x1, x2, x3])
+    x = layers.Concatenate(axis=1)([x1, x2, x3])
 
     for _ in range(args.num_transformer):
         x = TransformerBlock(embed_dim, num_heads, ff_dim)(x)
@@ -444,7 +448,8 @@ else:
 
 
 # %%
-model = get_age_model(creative_id_emb, ad_id_emb, product_id_emb)
+# model = get_age_model(creative_id_emb, ad_id_emb, product_id_emb)
+model = get_model_head_concat(creative_id_emb, ad_id_emb, product_id_emb)
 # %%
 # 测试数据格式(batch_size, sequence长度)
 # x1 = np.array([1, 2, 3, 4]).reshape(1, -1)
