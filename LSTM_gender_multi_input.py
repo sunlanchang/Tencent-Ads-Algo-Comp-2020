@@ -282,9 +282,11 @@ if not args.load_from_npy:
         for i, data in enumerate(datas):
             np.save(f'tmp/{name}_{i}.npy', data)
 
-    inputs = [x1_train, x1_val, x2_train, x2_val, x3_train, x3_val]
-    targets = [y_train, y_val]
-    embeddings = [creative_id_emb, ad_id_emb, product_id_emb]
+    inputs = [DATA['X1_train'], DATA['X1_val'], DATA['X2_train'],
+              DATA['X2_val'], DATA['X3_train'], DATA['x3_val']]
+    targets = [DATA['Y_train'], DATA['Y_val']]
+    embeddings = [DATA['creative_id_emb'],
+                  DATA['ad_id_emb'], DATA['product_id_emb']]
     save_npy(inputs, 'inputs')
     save_npy(targets, 'gender')
     save_npy(embeddings, 'embeddings')
