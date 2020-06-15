@@ -19,7 +19,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 '''
 第一次训练使用这个命令训练，能够保存一些中间结果
-python LSTM_gender_multi_input.py  --epoch 5 --batch_size 256 --num_lstm 3 --examples 10000
+python LSTM_gender_multi_input.py  --epoch 5 --batch_size 256 --num_lstm 3 --examples 810000
 上边这个命令参数中：
 --epoch 一般是1个就收敛2个就过拟合
 --batch_size 根据你的机器调到最大
