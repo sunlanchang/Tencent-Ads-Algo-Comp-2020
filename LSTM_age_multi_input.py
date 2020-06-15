@@ -1,5 +1,4 @@
 # %%
-# 生成词嵌入文件
 import os
 import tensorflow as tf
 import numpy as np
@@ -15,6 +14,7 @@ from tensorflow.keras.utils import to_categorical
 from gensim.models import Word2Vec, KeyedVectors
 from mymail import mail
 import argparse
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
@@ -89,7 +89,6 @@ def get_train_val():
 
     # 第一个输入
     # 获取 creative_id 特征
-    # f = open('tmp/userid_creative_ids.txt')
     f = open('word2vec/userid_creative_ids.txt')
     tokenizer = Tokenizer(num_words=NUM_creative_id)
     tokenizer.fit_on_texts(f)
@@ -124,7 +123,6 @@ def get_train_val():
 
     # 第三个输入
     # 获取 product_id 特征
-    # f = open('tmp/userid_product_ids.txt')
     f = open('word2vec/userid_product_ids.txt')
     tokenizer = Tokenizer(num_words=NUM_product_id)
     tokenizer.fit_on_texts(f)
