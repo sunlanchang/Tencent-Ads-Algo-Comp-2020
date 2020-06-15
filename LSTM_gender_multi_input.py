@@ -27,7 +27,7 @@ python LSTM_gender_multi_input.py  --epoch 5 --batch_size 256 --num_lstm 3 --exa
 --example 设置成810000，也就是0.9的训练集，其中剩下的90000作为验证集，调试时候可以设置小的数字
 
 第二次训练用下面这条命令，能够使用第一次保存的中间结果，不用重复生成训练数据
-python LSTM_gender_multi_input.py --load_from_npy --epoch 5 --batch_size 256 --num_lstm 3 --examples 10000
+python LSTM_gender_multi_input.py --load_from_npy --epoch 5 --batch_size 256 --num_lstm 3 --examples 810000
 '''
 
 # %%
@@ -38,6 +38,8 @@ python LSTM_gender_multi_input.py --load_from_npy --epoch 5 --batch_size 256 --n
 #     current_line_len = len(line.strip().split(' '))
 #     LEN_creative_id = max(LEN_creative_id, current_line_len)
 # f.close()
+
+
 # %%
 parser = argparse.ArgumentParser()
 parser.add_argument('--load_from_npy', action='store_true',
@@ -103,6 +105,20 @@ def get_train_val():
             sequences, maxlen=len_feature, padding='post')
         return X_train, tokenizer
 
+    # 构造输出的训练标签
+    # 获得age、gender标签
+    user_train = pd.read_csv(
+        'data/train_preliminary/user.csv').sort_values(['user_id'], ascending=(True,))
+    Y_gender = user_train['gender'].values
+    Y_age = user_train['age'].values
+    Y_gender = Y_gender - 1
+    Y_age = Y_age - 1
+    Y_age = to_categorical(Y_age)
+    Y_gender = to_categorical(Y_gender)
+
+    DATA['Y_train'] = Y_gender[:train_examples]
+    DATA['Y_val'] = Y_gender[train_examples:]
+
     DATA = {}
     num_examples = Y_age.shape[0]
     train_examples = int(num_examples * 0.9)
@@ -137,21 +153,6 @@ def get_train_val():
     DATA['X3_val'] = X3_train[train_examples:]
     DATA['product_id_emb'] = product_id_emb
 
-    # 构造输出的训练标签
-    # 获得age、gender标签
-    user_train = pd.read_csv(
-        'data/train_preliminary/user.csv').sort_values(['user_id'], ascending=(True,))
-    Y_gender = user_train['gender'].values
-    Y_age = user_train['age'].values
-    Y_gender = Y_gender - 1
-    Y_age = Y_age - 1
-    Y_age = to_categorical(Y_age)
-    Y_gender = to_categorical(Y_gender)
-
-    DATA['Y_train'] = Y_gender[:train_examples]
-    DATA['Y_val'] = Y_gender[train_examples:]
-
-    # 分别对应 x1_train x1_val x2_train x2_val y_train y_val
     return DATA
 
 # %%
