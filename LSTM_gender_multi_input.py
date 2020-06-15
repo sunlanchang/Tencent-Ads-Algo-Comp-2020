@@ -15,7 +15,21 @@ from tensorflow.keras.utils import to_categorical
 from gensim.models import Word2Vec, KeyedVectors
 from mymail import mail
 import argparse
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+'''
+第一次训练使用这个命令训练，能够保存一些中间结果
+python LSTM_gender_multi_input.py  --epoch 5 --batch_size 256 --num_lstm 3 --examples 810000
+上边这个命令参数中：
+--epoch 一般是1个就收敛2个就过拟合
+--batch_size 根据你的机器调到最大
+--num_lstm 我测试age时候3比较好能到42.4%，5就下降到41了
+--example 设置成810000，也就是0.9的训练集，其中剩下的90000作为验证集，调试时候可以设置小的数字
+
+第二次训练用下面这条命令，能够使用第一次保存的中间结果，不用重复生成训练数据
+python LSTM_gender_multi_input.py --load_from_npy --epoch 5 --batch_size 256 --num_lstm 3 --examples 10000
+'''
 
 # %%
 # 统计creative_id序列的长度，只需要统计一次
