@@ -6,7 +6,7 @@ import pandas as pd
 from tqdm import tqdm
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from tensorflow.keras import layers
-from tensorflow.keras.layers import Input, LSTM, Bidirectional, Embedding, Dense, Dropout, concatenate
+from tensorflow.keras.layers import Input, LSTM, Bidirectional, Embedding, Dense, Dropout, Concatenate
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -193,9 +193,55 @@ def get_model(DATA):
     x3 = layers.GlobalMaxPooling1D()(x3)
 
     # concat x1 x2
-    x = concatenate([x1, x2, x3])
+    x = Concatenate(axis=1)([x1, x2, x3])
     # x = Dense(128)(x)
     # x = Dropout(0.1)(x)
+    output_y = Dense(10, activation='softmax')(x)
+
+    model = Model([input_creative_id, input_ad_id, input_product_id], output_y)
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='adam', metrics=['accuracy'])
+    model.summary()
+
+    return model
+
+# %%
+
+
+def get_model_head_concat(DATA):
+    # shape：(sequence长度, )
+    # first input
+    input_creative_id = Input(shape=(None,), name='creative_id')
+    x1 = Embedding(input_dim=NUM_creative_id,
+                   output_dim=128,
+                   weights=[DATA['creative_id_emb']],
+                   trainable=args.not_train_embedding,
+                   input_length=LEN_creative_id,
+                   mask_zero=True)(input_creative_id)
+
+    input_ad_id = Input(shape=(None,), name='ad_id')
+    x2 = Embedding(input_dim=NUM_ad_id,
+                   output_dim=128,
+                   weights=[DATA['ad_id_emb']],
+                   trainable=args.not_train_embedding,
+                   input_length=LEN_ad_id,
+                   mask_zero=True)(input_ad_id)
+
+    input_product_id = Input(shape=(None,), name='product_id')
+    x3 = Embedding(input_dim=NUM_product_id,
+                   output_dim=128,
+                   weights=[DATA['product_id_emb']],
+                   trainable=args.not_train_embedding,
+                   input_length=LEN_product_id,
+                   mask_zero=True)(input_product_id)
+
+    x = Concatenate(axis=1)([x1, x2, x3])
+
+    for _ in range(args.num_lstm):
+        x = Bidirectional(LSTM(256, return_sequences=True))(x)
+    x = layers.GlobalMaxPooling1D()(x)
+    # x = layers.GlobalAvaregePooling1D()(x)
+
     output_y = Dense(10, activation='softmax')(x)
 
     model = Model([input_creative_id, input_ad_id, input_product_id], output_y)
@@ -247,7 +293,8 @@ else:
 
 
 # %%
-model = get_model(DATA)
+# model = get_model(DATA)
+model = get_model_head_concat(DATA)
 # %%
 # %%
 # 测试数据格式(batch_size, sequence长度)

@@ -1,5 +1,4 @@
 # %%
-# 生成词嵌入文件
 import os
 import tensorflow as tf
 import numpy as np
@@ -7,7 +6,7 @@ import pandas as pd
 from tqdm import tqdm
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from tensorflow.keras import layers
-from tensorflow.keras.layers import Input, LSTM, Bidirectional, Embedding, Dense, Dropout, concatenate
+from tensorflow.keras.layers import Input, LSTM, Bidirectional, Embedding, Dense, Dropout, Concatenate
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -73,7 +72,7 @@ NUM_product_id = 33273+1
 def get_train_val():
 
     # 提取词向量文件
-    def get_embedding(feature_name):
+    def get_embedding(feature_name, tokenizer):
         path = f"word2vec/wordvectors_{feature_name}.kv"
         wv = KeyedVectors.load(path, mmap='r')
         feature_tokens = list(wv.vocab.keys())
@@ -87,58 +86,56 @@ def get_train_val():
                 embedding_matrix[index] = embedding_vector
         return embedding_matrix
 
+    # 从序列文件提取array格式数据
+    def get_train(feature_name, vocab_size, len_feature):
+        f = open(f'word2vec/userid_{feature_name}s.txt')
+        tokenizer = Tokenizer(num_words=vocab_size)
+        tokenizer.fit_on_texts(f)
+        f.close()
+
+        feature_seq = []
+        with open(f'word2vec/userid_{feature_name}s.txt') as f:
+            for text in f:
+                feature_seq.append(text.strip())
+
+        sequences = tokenizer.texts_to_sequences(feature_seq[:900000//1])
+        X_train = pad_sequences(
+            sequences, maxlen=len_feature, padding='post')
+        return X_train, tokenizer
+
+    DATA = {}
+    num_examples = Y_age.shape[0]
+    train_examples = int(num_examples * 0.9)
+
     # 第一个输入
     # 获取 creative_id 特征
-    # f = open('tmp/userid_creative_ids.txt')
-    f = open('word2vec/userid_creative_ids.txt')
-    tokenizer = Tokenizer(num_words=NUM_creative_id)
-    tokenizer.fit_on_texts(f)
-    f.close()
-    creative_id_seq = []
-    with open('word2vec/userid_creative_ids.txt') as f:
-        for text in f:
-            creative_id_seq.append(text.strip())
+    X1_train, tokenizer = get_train(
+        'creative_id', NUM_creative_id, LEN_creative_id)
+    creative_id_emb = get_embedding('creative_id', tokenizer)
 
-    sequences = tokenizer.texts_to_sequences(creative_id_seq[:900000//1])
-    X1_train = pad_sequences(
-        sequences, maxlen=LEN_creative_id, padding='post')
-
-    creative_id_emb = get_embedding(feature_name='creative_id')
+    DATA['X1_train'] = X1_train[:train_examples]
+    DATA['X1_val'] = X1_train[train_examples:]
+    DATA['creative_id_emb'] = creative_id_emb
 
     # 第二个输入
     # 获取 ad_id 特征
-    f = open('word2vec/userid_ad_ids.txt')
-    tokenizer = Tokenizer(num_words=NUM_ad_id)
-    tokenizer.fit_on_texts(f)
-    f.close()
-    ad_id_seq = []
-    with open('word2vec/userid_ad_ids.txt') as f:
-        for text in f:
-            ad_id_seq.append(text.strip())
+    X2_train, tokenizer = get_train(
+        'ad_id', NUM_ad_id, LEN_ad_id)
+    ad_id_emb = get_embedding('ad_id', tokenizer)
 
-    sequences = tokenizer.texts_to_sequences(ad_id_seq[:900000//1])
-    X2_train = pad_sequences(
-        sequences, maxlen=LEN_ad_id, padding='post')
-
-    ad_id_emb = get_embedding(feature_name='ad_id')
+    DATA['X2_train'] = X2_train[:train_examples]
+    DATA['X2_val'] = X2_train[train_examples:]
+    DATA['ad_id_emb'] = ad_id_emb
 
     # 第三个输入
     # 获取 product_id 特征
-    # f = open('tmp/userid_product_ids.txt')
-    f = open('word2vec/userid_product_ids.txt')
-    tokenizer = Tokenizer(num_words=NUM_product_id)
-    tokenizer.fit_on_texts(f)
-    f.close()
-    product_id_seq = []
-    with open('word2vec/userid_product_ids.txt') as f:
-        for text in f:
-            product_id_seq.append(text.strip())
+    X3_train, tokenizer = get_train(
+        'product_id', NUM_product_id, LEN_product_id)
+    product_id_emb = get_embedding('product_id', tokenizer)
 
-    sequences = tokenizer.texts_to_sequences(product_id_seq[:900000//1])
-    X3_train = pad_sequences(
-        sequences, maxlen=LEN_product_id, padding='post')
-
-    product_id_emb = get_embedding(feature_name='product_id')
+    DATA['X3_train'] = X3_train[:train_examples]
+    DATA['X3_val'] = X3_train[train_examples:]
+    DATA['product_id_emb'] = product_id_emb
 
     # 构造输出的训练标签
     # 获得age、gender标签
@@ -150,11 +147,12 @@ def get_train_val():
     Y_age = Y_age - 1
     Y_age = to_categorical(Y_age)
     Y_gender = to_categorical(Y_gender)
-    num_examples = Y_age.shape[0]
-    train_examples = int(num_examples * 0.9)
+
+    DATA['Y_train'] = Y_gender[:train_examples]
+    DATA['Y_val'] = Y_gender[train_examples:]
 
     # 分别对应 x1_train x1_val x2_train x2_val y_train y_val
-    return X1_train[:train_examples], X1_train[train_examples:], X2_train[:train_examples], X2_train[train_examples:], X3_train[:train_examples], X3_train[train_examples:], Y_gender[:train_examples], Y_gender[train_examples:], creative_id_emb, ad_id_emb, product_id_emb
+    return DATA
 
 # %%
 
@@ -169,13 +167,13 @@ LEN_ad_id = 100
 LEN_product_id = 100
 
 
-def get_model(creative_id_emb, ad_id_emb, product_id_emb):
+def get_model(DATA):
     # shape：(sequence长度, )
     # first input
     input_creative_id = Input(shape=(None,), name='creative_id')
     x1 = Embedding(input_dim=NUM_creative_id,
                    output_dim=128,
-                   weights=[creative_id_emb],
+                   weights=[DATA['creative_id_emb']],
                    trainable=args.not_train_embedding,
                    input_length=LEN_creative_id,
                    mask_zero=True)(input_creative_id)
@@ -187,7 +185,7 @@ def get_model(creative_id_emb, ad_id_emb, product_id_emb):
     input_ad_id = Input(shape=(None,), name='ad_id')
     x2 = Embedding(input_dim=NUM_ad_id,
                    output_dim=128,
-                   weights=[ad_id_emb],
+                   weights=[DATA['ad_id_emb']],
                    trainable=args.not_train_embedding,
                    input_length=LEN_ad_id,
                    mask_zero=True)(input_ad_id)
@@ -199,7 +197,7 @@ def get_model(creative_id_emb, ad_id_emb, product_id_emb):
     input_product_id = Input(shape=(None,), name='product_id')
     x3 = Embedding(input_dim=NUM_product_id,
                    output_dim=128,
-                   weights=[product_id_emb],
+                   weights=[DATA['product_id_emb']],
                    trainable=args.not_train_embedding,
                    input_length=LEN_product_id,
                    mask_zero=True)(input_product_id)
@@ -208,9 +206,55 @@ def get_model(creative_id_emb, ad_id_emb, product_id_emb):
     x3 = layers.GlobalMaxPooling1D()(x3)
 
     # concat x1 x2
-    x = concatenate([x1, x2, x3])
+    x = Concatenate(axis=1)([x1, x2, x3])
     # x = Dense(128)(x)
     # x = Dropout(0.1)(x)
+    output_y = Dense(2, activation='softmax')(x)
+
+    model = Model([input_creative_id, input_ad_id, input_product_id], output_y)
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='adam', metrics=['accuracy'])
+    model.summary()
+
+    return model
+
+# %%
+
+
+def get_model_head_concat(DATA):
+    # shape：(sequence长度, )
+    # first input
+    input_creative_id = Input(shape=(None,), name='creative_id')
+    x1 = Embedding(input_dim=NUM_creative_id,
+                   output_dim=128,
+                   weights=[DATA['creative_id_emb']],
+                   trainable=args.not_train_embedding,
+                   input_length=LEN_creative_id,
+                   mask_zero=True)(input_creative_id)
+
+    input_ad_id = Input(shape=(None,), name='ad_id')
+    x2 = Embedding(input_dim=NUM_ad_id,
+                   output_dim=128,
+                   weights=[DATA['ad_id_emb']],
+                   trainable=args.not_train_embedding,
+                   input_length=LEN_ad_id,
+                   mask_zero=True)(input_ad_id)
+
+    input_product_id = Input(shape=(None,), name='product_id')
+    x3 = Embedding(input_dim=NUM_product_id,
+                   output_dim=128,
+                   weights=[DATA['product_id_emb']],
+                   trainable=args.not_train_embedding,
+                   input_length=LEN_product_id,
+                   mask_zero=True)(input_product_id)
+
+    x = Concatenate(axis=1)([x1, x2, x3])
+
+    for _ in range(args.num_lstm):
+        x = Bidirectional(LSTM(256, return_sequences=True))(x)
+    x = layers.GlobalMaxPooling1D()(x)
+    # x = layers.GlobalAvaregePooling1D()(x)
+
     output_y = Dense(2, activation='softmax')(x)
 
     model = Model([input_creative_id, input_ad_id, input_product_id], output_y)
@@ -224,8 +268,8 @@ def get_model(creative_id_emb, ad_id_emb, product_id_emb):
 # %%
 if not args.load_from_npy:
     mail('start getting train data')
-    print('从csv文件提取训练数据到array格式')
-    x1_train, x1_val, x2_train, x2_val, x3_train, x3_val, y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb = get_train_val()
+    print('从csv文件提取训练数据到array格式，大概十分钟时间')
+    DATA = get_train_val()
     mail('get train data done.')
 
     # 训练数据保存为npy文件
@@ -244,20 +288,26 @@ if not args.load_from_npy:
     save_npy(targets, 'gender')
     save_npy(embeddings, 'embeddings')
 else:
-    x1_train = np.load('tmp/inputs_0.npy', allow_pickle=True)
-    x1_val = np.load('tmp/inputs_1.npy', allow_pickle=True)
-    x2_train = np.load('tmp/inputs_2.npy', allow_pickle=True)
-    x2_val = np.load('tmp/inputs_3.npy', allow_pickle=True)
-    x3_train = np.load('tmp/inputs_4.npy', allow_pickle=True)
-    x3_val = np.load('tmp/inputs_5.npy', allow_pickle=True)
-    y_train = np.load('tmp/gender_0.npy', allow_pickle=True)
-    y_val = np.load('tmp/gender_1.npy', allow_pickle=True)
-    creative_id_emb = np.load('tmp/embeddings_0.npy', allow_pickle=True)
-    ad_id_emb = np.load('tmp/embeddings_1.npy', allow_pickle=True)
-    product_id_emb = np.load('tmp/embeddings_2.npy', allow_pickle=True)
+    DATA = {}
+    DATA['X1_train'] = np.load('tmp/inputs_0.npy', allow_pickle=True)
+    DATA['X1_val'] = np.load('tmp/inputs_1.npy', allow_pickle=True)
+    DATA['X2_train'] = np.load('tmp/inputs_2.npy', allow_pickle=True)
+    DATA['X2_val'] = np.load('tmp/inputs_3.npy', allow_pickle=True)
+    DATA['X3_train'] = np.load('tmp/inputs_4.npy', allow_pickle=True)
+    DATA['X3_val'] = np.load('tmp/inputs_5.npy', allow_pickle=True)
+    DATA['Y_train'] = np.load('tmp/gender_0.npy', allow_pickle=True)
+    DATA['Y_val'] = np.load('tmp/gender_1.npy', allow_pickle=True)
+    DATA['creative_id_emb'] = np.load(
+        'tmp/embeddings_0.npy', allow_pickle=True)
+    DATA['ad_id_emb'] = np.load(
+        'tmp/embeddings_1.npy', allow_pickle=True)
+    DATA['product_id_emb'] = np.load(
+        'tmp/embeddings_2.npy', allow_pickle=True)
+
 
 # %%
-model = get_model(creative_id_emb, ad_id_emb, product_id_emb)
+# model = get_model(DATA)
+model = get_model_head_concat(DATA)
 # %%
 # %%
 # 测试数据格式(batch_size, sequence长度)
@@ -275,10 +325,14 @@ try:
     examples = args.examples
     mail('start train lstm')
     model.fit(
-        {'creative_id': x1_train[:examples], 'ad_id': x2_train[:examples],
-            'product_id': x3_train[:examples]},
-        y_train[:examples],
-        validation_data=([x1_val, x2_val, x3_val], y_val),
+        {
+            'creative_id': DATA['X1_train'][:examples],
+            'ad_id': DATA['X2_train'][:examples],
+            'product_id': DATA['X3_train'][:examples]
+        },
+        DATA['Y_train'][:examples],
+        validation_data=([DATA['X1_val'], DATA['X2_val'],
+                          DATA['X3_val']], DATA['Y_val']),
         epochs=args.epoch,
         batch_size=args.batch_size,
         callbacks=[checkpoint],
