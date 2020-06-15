@@ -152,7 +152,7 @@ LEN_ad_id = 100
 LEN_product_id = 100
 
 
-def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
+def get_model(creative_id_emb, ad_id_emb, product_id_emb):
     # shape：(sequence长度, )
     # first input
     input_creative_id = Input(shape=(None,), name='creative_id')
@@ -241,7 +241,7 @@ else:
 
 
 # %%
-model = get_age_model(creative_id_emb, ad_id_emb, product_id_emb)
+model = get_model(creative_id_emb, ad_id_emb, product_id_emb)
 # %%
 # %%
 # 测试数据格式(batch_size, sequence长度)
