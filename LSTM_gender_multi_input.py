@@ -27,7 +27,7 @@ python LSTM_gender_multi_input.py  --epoch 5 --batch_size 256 --num_lstm 3 --exa
 --example 设置成810000，也就是0.9的训练集，其中剩下的90000作为验证集，调试时候可以设置小的数字
 
 第二次训练用下面这条命令，能够使用第一次保存的中间结果，不用重复生成训练数据
-python LSTM_gender_multi_input.py --load_from_npy --epoch 5 --batch_size 256 --num_lstm 3 --examples 10000
+python LSTM_gender_multi_input.py --load_from_npy --epoch 5 --batch_size 256 --num_lstm 3 --examples 810000
 '''
 
 # %%
