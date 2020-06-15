@@ -210,30 +210,37 @@ def get_gender_model(creative_id_emb, ad_id_emb, product_id_emb):
 # %%
 if not args.load_from_npy:
     mail('start getting train data')
+    print('从csv文件提取训练数据到array格式')
     x1_train, x1_val, x2_train, x2_val, x3_train, x3_val, y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb = get_train_val()
     mail('get train data done.')
 
-    def save_data(datas):
-        dirs = 'tmp/'
-        if not os.path.exists(dirs):
-            os.makedirs(dirs)
+    # 训练数据保存为npy文件
+    dirs = 'tmp/'
+    if not os.path.exists(dirs):
+        os.makedirs(dirs)
+
+    def save_npy(datas, name):
         for i, data in enumerate(datas):
-            np.save(f'tmp/transformer_input_{i}.npy', data)
-    datas = [x1_train, x1_val, x2_train, x2_val, x3_train, x3_val,
-             y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb]
-    save_data(datas)
+            np.save(f'tmp/{name}_{i}.npy', data)
+
+    inputs = [x1_train, x1_val, x2_train, x2_val, x3_train, x3_val]
+    targets = [y_train, y_val]
+    embeddings = [creative_id_emb, ad_id_emb, product_id_emb]
+    save_npy(inputs, 'inputs')
+    save_npy(targets, 'gender')
+    save_npy(embeddings, 'embeddings')
 else:
-    x1_train = np.load('tmp/transformer_input_0.npy', allow_pickle=True)
-    x1_val = np.load('tmp/transformer_input_1.npy', allow_pickle=True)
-    x2_train = np.load('tmp/transformer_input_2.npy', allow_pickle=True)
-    x2_val = np.load('tmp/transformer_input_3.npy', allow_pickle=True)
-    x3_train = np.load('tmp/transformer_input_4.npy', allow_pickle=True)
-    x3_val = np.load('tmp/transformer_input_5.npy', allow_pickle=True)
-    y_train = np.load('tmp/transformer_input_6.npy', allow_pickle=True)
-    y_val = np.load('tmp/transformer_input_7.npy', allow_pickle=True)
-    creative_id_emb = np.load('tmp/transformer_input_8.npy', allow_pickle=True)
-    ad_id_emb = np.load('tmp/transformer_input_9.npy', allow_pickle=True)
-    product_id_emb = np.load('tmp/transformer_input_10.npy', allow_pickle=True)
+    x1_train = np.load('tmp/inputs_0.npy', allow_pickle=True)
+    x1_val = np.load('tmp/inputs_1.npy', allow_pickle=True)
+    x2_train = np.load('tmp/inputs_2.npy', allow_pickle=True)
+    x2_val = np.load('tmp/inputs_3.npy', allow_pickle=True)
+    x3_train = np.load('tmp/inputs_4.npy', allow_pickle=True)
+    x3_val = np.load('tmp/inputs_5.npy', allow_pickle=True)
+    y_train = np.load('tmp/gender_0.npy', allow_pickle=True)
+    y_val = np.load('tmp/gender_1.npy', allow_pickle=True)
+    creative_id_emb = np.load('tmp/embeddings_0.npy', allow_pickle=True)
+    ad_id_emb = np.load('tmp/embeddings_1.npy', allow_pickle=True)
+    product_id_emb = np.load('tmp/embeddings_2.npy', allow_pickle=True)
 
 # %%
 model = get_gender_model(creative_id_emb, ad_id_emb, product_id_emb)
