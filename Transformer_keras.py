@@ -212,21 +212,10 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
     # shape：(sequence长度, )
     # first input
     input_creative_id = Input(shape=(None,), name='creative_id')
-    # x1 = Embedding(input_dim=NUM_creative_id,
-    #                output_dim=128,
-    #                weights=[creative_id_emb],
-    #                trainable=True,
-    #                input_length=LEN_creative_id,
-    #                mask_zero=True)(input_creative_id)
     x1 = TokenAndPositionEmbedding(
         maxlen, NUM_creative_id, embed_dim, creative_id_emb)(input_creative_id)
     for _ in range(args.num_transformer):
         x1 = TransformerBlock(embed_dim, num_heads, ff_dim)(x1)
-    # x1 = layers.Dropout(0.1)(x1)
-    # x1 = LSTM(256)(x1)
-    # x1 = layers.Dense(20, activation="relu")(x1)
-    # x1 = layers.Dropout(0.1)(x1)
-    # outputs = layers.Dense(10, activation="softmax")(x1)
 
     for _ in range(args.num_lstm):
         x1 = Bidirectional(LSTM(256, return_sequences=True))(x1)
@@ -234,12 +223,6 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
 
     # second input
     input_ad_id = Input(shape=(None,), name='ad_id')
-    # x2 = Embedding(input_dim=NUM_ad_id,
-    #                 output_dim=128,
-    #                 weights=[ad_id_emb],
-    #                 trainable=True,
-    #                 input_length=LEN_ad_id,
-    #                 mask_zero=True)(input_ad_id)
 
     x2 = TokenAndPositionEmbedding(
         maxlen, NUM_ad_id, embed_dim, ad_id_emb)(input_ad_id)
@@ -249,20 +232,9 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
         x2 = Bidirectional(LSTM(256, return_sequences=True))(x2)
     # x2 = Bidirectional(LSTM(256, return_sequences=False))(x2)
     x2 = layers.GlobalMaxPooling1D()(x2)
-    # x2 = layers.Dropout(0.1)(x2)
-    # x2 = LSTM(256)(x2)
-    # x2 = layers.Dense(20, activation="relu")(x2)
-    # x2 = layers.Dense(20, activation="relu")(x2)
-    # x2 = layers.Dropout(0.1)(x2)
 
     # third input
     input_product_id = Input(shape=(None,), name='product_id')
-    # x3 = Embedding(input_dim=NUM_product_id,
-    #                output_dim=128,
-    #                weights=[product_id_emb],
-    #                trainable=True,
-    #                input_length=LEN_product_id,
-    #                mask_zero=True)(input_product_id)
 
     x3 = TokenAndPositionEmbedding(
         maxlen, NUM_product_id, embed_dim, product_id_emb)(input_product_id)
@@ -272,11 +244,6 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
         x3 = Bidirectional(LSTM(256, return_sequences=True))(x3)
     # x3 = Bidirectional(LSTM(256, return_sequences=False))(x3)
     x3 = layers.GlobalMaxPooling1D()(x3)
-    # x3 = layers.Dropout(0.1)(x3)
-    # x3 = LSTM(256)(x3)
-    # x3 = layers.Dense(20, activation="relu")(x3)
-    # x3 = layers.Dense(20, activation="relu")(x3)
-    # x3 = layers.Dropout(0.1)(x3)
 
     # concat x1 x2 x3
     x = concatenate([x1, x2, x3])
@@ -292,6 +259,48 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
     model.summary()
 
     return model
+
+
+# %%
+def get_age_model_test(creative_id_emb, ad_id_emb, product_id_emb):
+    embed_dim = 128  # Embedding size for each token
+    num_heads = 1  # Number of attention heads
+    ff_dim = 256  # Hidden layer size in feed forward network inside transformer
+    # shape：(sequence长度, )
+    # first input
+    input_creative_id = Input(shape=(None,), name='creative_id')
+    x1 = TokenAndPositionEmbedding(
+        maxlen, NUM_creative_id, embed_dim, creative_id_emb)(input_creative_id)
+
+    input_ad_id = Input(shape=(None,), name='ad_id')
+    x2 = TokenAndPositionEmbedding(
+        maxlen, NUM_ad_id, embed_dim, ad_id_emb)(input_ad_id)
+
+    input_product_id = Input(shape=(None,), name='product_id')
+    x3 = TokenAndPositionEmbedding(
+        maxlen, NUM_product_id, embed_dim, product_id_emb)(input_product_id)
+
+    x = concatenate([x1, x2, x3])
+
+    for _ in range(args.num_transformer):
+        x = TransformerBlock(embed_dim, num_heads, ff_dim)(x)
+
+    for _ in range(args.num_lstm):
+        x = Bidirectional(LSTM(256, return_sequences=True))(x)
+    x = layers.GlobalMaxPooling1D()(x)
+
+    # x = x1 + x2 + x3
+    # x = Dense(20)(x)
+    # x = Dropout(0.1)(x)
+    output_y = Dense(10, activation='softmax')(x)
+
+    model = Model([input_creative_id, input_ad_id, input_product_id], output_y)
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='adam', metrics=['accuracy'])
+    model.summary()
+
+    return model
+
 
 # %%
 
