@@ -221,7 +221,7 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
 # %%
 if not args.load_from_npy:
     mail('start getting train data')
-    print('从csv文件提取训练数据到array格式')
+    print('从csv文件提取训练数据到array格式，大概十分钟时间')
     x1_train, x1_val, x2_train, x2_val, x3_train, x3_val, y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb = get_train_val()
     mail('get train data done.')
 
