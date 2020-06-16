@@ -122,9 +122,9 @@ def get_train_val():
     DATA['Y_age_val'] = Y_age[train_examples:]
 
     # 第一个输入
-    # 获取 creative_id 特征
+    print('获取 creative_id 特征')
     X1_train, tokenizer = get_train(
-        'creative_id', NUM_creative_id+1, LEN_creative_id)
+        'creative_id', NUM_creative_id+1, LEN_creative_id)  # +1为了UNK的creative_id
     creative_id_emb = get_embedding('creative_id', tokenizer)
 
     DATA['X1_train'] = X1_train[:train_examples]
@@ -132,7 +132,7 @@ def get_train_val():
     DATA['creative_id_emb'] = creative_id_emb
 
     # 第二个输入
-    # 获取 ad_id 特征
+    print('获取 ad_id 特征')
     X2_train, tokenizer = get_train(
         'ad_id', NUM_ad_id+1, LEN_ad_id)
     ad_id_emb = get_embedding('ad_id', tokenizer)
@@ -142,7 +142,7 @@ def get_train_val():
     DATA['ad_id_emb'] = ad_id_emb
 
     # 第三个输入
-    # 获取 product_id 特征
+    print('获取 product_id 特征')
     X3_train, tokenizer = get_train(
         'product_id', NUM_product_id+1, LEN_product_id)
     product_id_emb = get_embedding('product_id', tokenizer)
@@ -152,7 +152,7 @@ def get_train_val():
     DATA['product_id_emb'] = product_id_emb
 
     # 第四个输入
-    # 获取 advertiser_id 特征
+    print('获取 advertiser_id 特征')
     X4_train, tokenizer = get_train(
         'advertiser_id', NUM_advertiser_id+1, LEN_advertiser_id)
     advertiser_id_emb = get_embedding('advertiser_id', tokenizer)
@@ -162,7 +162,7 @@ def get_train_val():
     DATA['advertiser_id_emb'] = advertiser_id_emb
 
     # 第五个输入
-    # 获取 industry 特征
+    print('获取 industry 特征')
     X5_train, tokenizer = get_train(
         'industry', NUM_industry+1, LEN_industry)
     industry_emb = get_embedding('industry', tokenizer)
@@ -172,7 +172,7 @@ def get_train_val():
     DATA['industry_emb'] = industry_emb
 
     # 第六个输入
-    # 获取 product_category 特征
+    print('获取 product_category 特征')
     X6_train, tokenizer = get_train(
         'product_category', NUM_product_category+1, LEN_product_category)
     product_category_emb = get_embedding('product_category', tokenizer)
@@ -352,6 +352,7 @@ if not args.load_from_npy:
         os.makedirs(dirs)
 
     def save_npy(datas, name):
+        print(f'saving {name} ...')
         for i, data in enumerate(datas):
             np.save(f'tmp/{name}_{i}.npy', data)
 
@@ -363,8 +364,8 @@ if not args.load_from_npy:
         DATA['X5_train'], DATA['X5_val'],
         DATA['X6_train'], DATA['X6_val'],
     ]
-    outputs_age = [DATA['Y_train'], DATA['Y_val']]
-    outputs_gender = [DATA['Y_train'], DATA['Y_val']]
+    outputs_gender = [DATA['Y_gender_train'], DATA['Y_gender_val']]
+    outputs_age = [DATA['Y_age_train'], DATA['Y_age_val']]
     embeddings = [
         DATA['creative_id_emb'],
         DATA['ad_id_emb'],
@@ -374,8 +375,8 @@ if not args.load_from_npy:
         DATA['product_category_emb'],
     ]
     save_npy(inputs, 'inputs')
-    save_npy(outputs_age, 'age')
     save_npy(outputs_gender, 'gender')
+    save_npy(outputs_age, 'age')
     save_npy(embeddings, 'embeddings')
 else:
     DATA = {}
