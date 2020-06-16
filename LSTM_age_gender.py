@@ -110,13 +110,13 @@ def get_train_val():
     Y_age = to_categorical(Y_age)
     Y_gender = to_categorical(Y_gender)
 
+    num_examples = Y_age.shape[0]
+    train_examples = int(num_examples * 0.9)
+
     DATA['Y_gender_train'] = Y_gender[:train_examples]
     DATA['Y_gender_val'] = Y_gender[train_examples:]
     DATA['Y_age_train'] = Y_age[:train_examples]
     DATA['Y_age_val'] = Y_age[train_examples:]
-
-    num_examples = Y_age.shape[0]
-    train_examples = int(num_examples * 0.9)
 
     # 第一个输入
     # 获取 creative_id 特征
@@ -437,7 +437,7 @@ try:
         {
             'creative_id': DATA['X1_train'][:train_examples],
             'ad_id': DATA['X2_train'][:train_examples],
-            'product_id': DATA['X3_train'][:train_examples]
+            'product_id': DATA['X3_train'][:train_examples],
             'advertiser_id': DATA['X4_train'][:train_examples],
             'industry': DATA['X5_train'][:train_examples],
             'product_category': DATA['X6_train'][:train_examples]
@@ -450,7 +450,7 @@ try:
             {
                 'creative_id': DATA['X1_val'][:val_examples],
                 'ad_id': DATA['X2_val'][:val_examples],
-                'product_id': DATA['X3_val'][:val_examples]
+                'product_id': DATA['X3_val'][:val_examples],
                 'advertiser_id': DATA['X4_val'][:val_examples],
                 'industry': DATA['X5_val'][:val_examples],
                 'product_category': DATA['X6_val'][:val_examples]
