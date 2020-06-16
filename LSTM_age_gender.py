@@ -61,6 +61,9 @@ args = parser.parse_args()
 NUM_creative_id = 2481135+1
 NUM_ad_id = 2264190+1
 NUM_product_id = 33273+1
+NUM_advertiser_id = 52090+1
+NUM_industry = 326+1
+NUM_product_category = 18+1
 
 
 def get_train_val():
