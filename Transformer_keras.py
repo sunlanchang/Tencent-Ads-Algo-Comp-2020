@@ -1,21 +1,23 @@
 # %%
 # 生成词嵌入文件
-from tensorflow.keras import layers
-from tensorflow import keras
+import os
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
+import argparse
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras import losses
+from tensorflow.keras import optimizers
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
-from gensim.models import Word2Vec, KeyedVectors
 from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Dropout, Concatenate, Bidirectional
 from tensorflow.keras.models import Model, Sequential
-import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
-from mymail import mail
-import os
 from tensorflow.keras.utils import to_categorical
-import argparse
+from gensim.models import Word2Vec, KeyedVectors
+from mymail import mail
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 '''
@@ -45,9 +47,12 @@ parser.add_argument('--head_transformer', type=int,
 parser.add_argument('--num_lstm', type=int,
                     help='LSTM 个数',
                     default=1)
-parser.add_argument('--examples', type=int,
-                    help='训练数据，默认为训练集，不包含验证集',
+parser.add_argument('--train_examples', type=int,
+                    help='训练数据，默认为训练集，不包含验证集，调试时候可以设置1000',
                     default=810000)
+parser.add_argument('--val_examples', type=int,
+                    help='验证集数据，调试时候可以设置1000',
+                    default=90000)
 args = parser.parse_args()
 # %%
 
@@ -196,19 +201,25 @@ class TokenAndPositionEmbedding(layers.Layer):
 
 
 # %%
-NUM_creative_id = 2481135+1  # embedding词表大小+1，其中+1为了未出现在此表中的UNK词
-NUM_ad_id = 2264190+1
-NUM_product_id = 33273+1
+NUM_creative_id = 2481135  # embedding词表大小+1，其中+1为了未出现在此表中的UNK词
+NUM_ad_id = 2264190
+NUM_product_id = 33273
+NUM_advertiser_id = 52090
+NUM_industry = 326
+NUM_product_category = 18
 
 LEN_creative_id = 100
 LEN_ad_id = 100
 LEN_product_id = 100
+LEN_advertiser_id = 100
+LEN_industry = 100
+LEN_product_category = 100
 
 # vocab_size = NUM_creative_id
 maxlen = 100
 
 
-def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
+def get_model(creative_id_emb, ad_id_emb, product_id_emb):
     embed_dim = 128  # Embedding size for each token
     num_heads = 1  # Number of attention heads
     ff_dim = 256  # Hidden layer size in feed forward network inside transformer
@@ -249,7 +260,7 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
     x3 = layers.GlobalMaxPooling1D()(x3)
 
     # concat x1 x2 x3
-  x = Concatenate(axis=1)([x1, x2, x3])
+    x = Concatenate(axis=1)([x1, x2, x3])
     # x = x1 + x2 + x3
     x = Dense(20)(x)
     # x = Dropout(0.1)(x)
@@ -265,26 +276,39 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
 
 
 # %%
-def get_model_head_concat(creative_id_emb, ad_id_emb, product_id_emb):
+def get_model_head_concat(DATA):
     embed_dim = 128  # Embedding size for each token
-    num_heads = 1  # Number of attention heads
+    num_heads = args.head_transformer  # Number of attention heads
     ff_dim = 256  # Hidden layer size in feed forward network inside transformer
     # shape：(sequence长度, )
     # first input
     input_creative_id = Input(shape=(None,), name='creative_id')
     x1 = TokenAndPositionEmbedding(
-        maxlen, NUM_creative_id, embed_dim, creative_id_emb)(input_creative_id)
+        maxlen, NUM_creative_id, embed_dim, DATA['creative_id_emb'])(input_creative_id)
 
     input_ad_id = Input(shape=(None,), name='ad_id')
     x2 = TokenAndPositionEmbedding(
-        maxlen, NUM_ad_id, embed_dim, ad_id_emb)(input_ad_id)
+        maxlen, NUM_ad_id, embed_dim, DATA['ad_id_emb'])(input_ad_id)
 
     input_product_id = Input(shape=(None,), name='product_id')
     x3 = TokenAndPositionEmbedding(
-        maxlen, NUM_product_id, embed_dim, product_id_emb)(input_product_id)
-    
-    # x = concatenate([x1, x2, x3])
-    x = layers.Concatenate(axis=1)([x1, x2, x3])
+        maxlen, NUM_product_id, embed_dim, DATA['product_id_emb'])(input_product_id)
+
+    input_advertiser_id = Input(shape=(None,), name='advertiser_id')
+    x4 = TokenAndPositionEmbedding(
+        maxlen, NUM_advertiser_id, embed_dim, DATA['advertiser_id_emb'])(input_advertiser_id)
+
+    input_industry = Input(shape=(None,), name='industry')
+    x5 = TokenAndPositionEmbedding(
+        maxlen, NUM_industry, embed_dim, DATA['industry_emb'])(input_industry)
+
+    input_product_category = Input(shape=(None,), name='product_category')
+    x6 = TokenAndPositionEmbedding(
+        maxlen, NUM_product_category, embed_dim, DATA['product_category_emb'])(input_product_category)
+
+    # concat
+    # x = x1 + x2 + x3
+    x = layers.Concatenate(axis=1)([x1, x2, x3, x4, x5, x6])
 
     for _ in range(args.num_transformer):
         x = TransformerBlock(embed_dim, num_heads, ff_dim)(x)
@@ -293,14 +317,29 @@ def get_model_head_concat(creative_id_emb, ad_id_emb, product_id_emb):
         x = Bidirectional(LSTM(256, return_sequences=True))(x)
     x = layers.GlobalMaxPooling1D()(x)
 
-    # x = x1 + x2 + x3
-    # x = Dense(20)(x)
-    # x = Dropout(0.1)(x)
-    output_y = Dense(10, activation='softmax')(x)
+    output_gender = Dense(2, activation='softmax', name='gender')(x)
+    output_age = Dense(10, activation='softmax', name='age')(x)
 
-    model = Model([input_creative_id, input_ad_id, input_product_id], output_y)
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='adam', metrics=['accuracy'])
+    model = Model(
+        [
+            input_creative_id,
+            input_ad_id,
+            input_product_id,
+            input_advertiser_id,
+            input_industry,
+            input_product_category
+        ],
+        [
+            output_gender,
+            output_age
+        ]
+    )
+    model.compile(
+        optimizer=optimizers.Adam(1e-4),
+        loss={'gender': losses.CategoricalCrossentropy(from_logits=False),
+              'age': losses.CategoricalCrossentropy(from_logits=False)},
+        loss_weights=[0.5, 0.5],
+        metrics=['accuracy'])
     model.summary()
 
     return model
@@ -311,101 +350,42 @@ def get_model_head_concat(creative_id_emb, ad_id_emb, product_id_emb):
 
 def get_train_val():
 
-    # 获取 creative_id 特征
-    # f = open('tmp/userid_creative_ids.txt')
-    f = open('word2vec/userid_creative_ids.txt')
-    tokenizer = Tokenizer(num_words=NUM_creative_id)
-    tokenizer.fit_on_texts(f)
-    f.close()
-    creative_id_seq = []
-    with open('word2vec/userid_creative_ids.txt') as f:
-        for text in f:
-            creative_id_seq.append(text.strip())
-
-    sequences = tokenizer.texts_to_sequences(creative_id_seq[:900000//1])
-    X1_train = pad_sequences(
-        sequences, maxlen=LEN_creative_id, padding='post')
-
-    # 获取creative_id embedding
-    def get_creative_id_emb():
-        path = "word2vec/wordvectors_creative_id.kv"
+    # 提取词向量文件
+    def get_embedding(feature_name, tokenizer):
+        path = f"word2vec/wordvectors_{feature_name}.kv"
         wv = KeyedVectors.load(path, mmap='r')
-        creative_id_tokens = list(wv.vocab.keys())
+        feature_tokens = list(wv.vocab.keys())
         embedding_dim = 128
         embedding_matrix = np.random.randn(
-            len(creative_id_tokens)+1, embedding_dim)
-        for creative_id in creative_id_tokens:
-            embedding_vector = wv[creative_id]
+            len(feature_tokens)+1, embedding_dim)
+        for feature in feature_tokens:
+            embedding_vector = wv[feature]
             if embedding_vector is not None:
-                index = tokenizer.texts_to_sequences([creative_id])[0][0]
+                index = tokenizer.texts_to_sequences([feature])[0][0]
                 embedding_matrix[index] = embedding_vector
         return embedding_matrix
 
-    creative_id_emb = get_creative_id_emb()
+    # 从序列文件提取array格式数据
+    def get_train(feature_name, vocab_size, len_feature):
+        f = open(f'word2vec/userid_{feature_name}s.txt')
+        tokenizer = Tokenizer(num_words=vocab_size)
+        tokenizer.fit_on_texts(f)
+        f.close()
 
-    # 获取 ad_id 特征
-    f = open('word2vec/userid_ad_ids.txt')
-    tokenizer = Tokenizer(num_words=NUM_ad_id)
-    tokenizer.fit_on_texts(f)
-    f.close()
-    ad_id_seq = []
-    with open('word2vec/userid_ad_ids.txt') as f:
-        for text in f:
-            ad_id_seq.append(text.strip())
+        feature_seq = []
+        with open(f'word2vec/userid_{feature_name}s.txt') as f:
+            for text in f:
+                feature_seq.append(text.strip())
 
-    sequences = tokenizer.texts_to_sequences(ad_id_seq[:900000//1])
-    X2_train = pad_sequences(
-        sequences, maxlen=LEN_ad_id, padding='post')
+        sequences = tokenizer.texts_to_sequences(feature_seq[:900000//1])
+        X_train = pad_sequences(
+            sequences, maxlen=len_feature, padding='post')
+        return X_train, tokenizer
 
-    def get_ad_id_emb():
-        path = "word2vec/wordvectors_ad_id.kv"
-        wv = KeyedVectors.load(path, mmap='r')
-        ad_id_tokens = list(wv.vocab.keys())
-        embedding_dim = 128
-        embedding_matrix = np.random.randn(
-            len(ad_id_tokens)+1, embedding_dim)
-        for ad_id in ad_id_tokens:
-            embedding_vector = wv[ad_id]
-            if embedding_vector is not None:
-                index = tokenizer.texts_to_sequences([ad_id])[0][0]
-                embedding_matrix[index] = embedding_vector
-        return embedding_matrix
+    # 构造输出的训练标签
+    # 获得age、gender标签
+    DATA = {}
 
-    ad_id_emb = get_ad_id_emb()
-
-    # 获取 product_id 特征
-    # f = open('tmp/userid_product_ids.txt')
-    f = open('word2vec/userid_product_ids.txt')
-    tokenizer = Tokenizer(num_words=NUM_product_id)
-    tokenizer.fit_on_texts(f)
-    f.close()
-    product_id_seq = []
-    with open('word2vec/userid_product_ids.txt') as f:
-        for text in f:
-            product_id_seq.append(text.strip())
-
-    sequences = tokenizer.texts_to_sequences(product_id_seq[:900000//1])
-    X3_train = pad_sequences(
-        sequences, maxlen=LEN_product_id, padding='post')
-
-    # 获取product_id embedding
-    def get_product_id_emb():
-        path = "word2vec/wordvectors_product_id.kv"
-        wv = KeyedVectors.load(path, mmap='r')
-        product_id_tokens = list(wv.vocab.keys())
-        embedding_dim = 128
-        embedding_matrix = np.random.randn(
-            len(product_id_tokens)+1, embedding_dim)
-        for product_id in product_id_tokens:
-            embedding_vector = wv[product_id]
-            if embedding_vector is not None:
-                index = tokenizer.texts_to_sequences([product_id])[0][0]
-                embedding_matrix[index] = embedding_vector
-        return embedding_matrix
-
-    product_id_emb = get_product_id_emb()
-
-    # 获得age标签
     user_train = pd.read_csv(
         'data/train_preliminary/user.csv').sort_values(['user_id'], ascending=(True,))
     Y_gender = user_train['gender'].values
@@ -413,43 +393,153 @@ def get_train_val():
     Y_gender = Y_gender - 1
     Y_age = Y_age - 1
     Y_age = to_categorical(Y_age)
+    Y_gender = to_categorical(Y_gender)
+
     num_examples = Y_age.shape[0]
     train_examples = int(num_examples * 0.9)
 
-    # 分别对应 x1_train x1_val x2_train x2_val y_train y_val
-    return X1_train[:train_examples], X1_train[train_examples:], X2_train[:train_examples], X2_train[train_examples:], X3_train[:train_examples], X3_train[train_examples:], Y_age[:train_examples], Y_age[train_examples:], creative_id_emb, ad_id_emb, product_id_emb
-    # return X1_train[:train_examples], X1_train[train_examples:], X2_train[:train_examples], X2_train[train_examples:], X3_train[:train_examples], X3_train[train_examples:], Y_age[:train_examples], Y_age[train_examples:],None,None,None
+    DATA['Y_gender_train'] = Y_gender[:train_examples]
+    DATA['Y_gender_val'] = Y_gender[train_examples:]
+    DATA['Y_age_train'] = Y_age[:train_examples]
+    DATA['Y_age_val'] = Y_age[train_examples:]
+
+    # 第一个输入
+    print('获取 creative_id 特征')
+    X1_train, tokenizer = get_train(
+        'creative_id', NUM_creative_id+1, LEN_creative_id)  # +1为了UNK的creative_id
+    creative_id_emb = get_embedding('creative_id', tokenizer)
+
+    DATA['X1_train'] = X1_train[:train_examples]
+    DATA['X1_val'] = X1_train[train_examples:]
+    DATA['creative_id_emb'] = creative_id_emb
+
+    # 第二个输入
+    print('获取 ad_id 特征')
+    X2_train, tokenizer = get_train(
+        'ad_id', NUM_ad_id+1, LEN_ad_id)
+    ad_id_emb = get_embedding('ad_id', tokenizer)
+
+    DATA['X2_train'] = X2_train[:train_examples]
+    DATA['X2_val'] = X2_train[train_examples:]
+    DATA['ad_id_emb'] = ad_id_emb
+
+    # 第三个输入
+    print('获取 product_id 特征')
+    X3_train, tokenizer = get_train(
+        'product_id', NUM_product_id+1, LEN_product_id)
+    product_id_emb = get_embedding('product_id', tokenizer)
+
+    DATA['X3_train'] = X3_train[:train_examples]
+    DATA['X3_val'] = X3_train[train_examples:]
+    DATA['product_id_emb'] = product_id_emb
+
+    # 第四个输入
+    print('获取 advertiser_id 特征')
+    X4_train, tokenizer = get_train(
+        'advertiser_id', NUM_advertiser_id+1, LEN_advertiser_id)
+    advertiser_id_emb = get_embedding('advertiser_id', tokenizer)
+
+    DATA['X4_train'] = X4_train[:train_examples]
+    DATA['X4_val'] = X4_train[train_examples:]
+    DATA['advertiser_id_emb'] = advertiser_id_emb
+
+    # 第五个输入
+    print('获取 industry 特征')
+    X5_train, tokenizer = get_train(
+        'industry', NUM_industry+1, LEN_industry)
+    industry_emb = get_embedding('industry', tokenizer)
+
+    DATA['X5_train'] = X5_train[:train_examples]
+    DATA['X5_val'] = X5_train[train_examples:]
+    DATA['industry_emb'] = industry_emb
+
+    # 第六个输入
+    print('获取 product_category 特征')
+    X6_train, tokenizer = get_train(
+        'product_category', NUM_product_category+1, LEN_product_category)
+    product_category_emb = get_embedding('product_category', tokenizer)
+
+    DATA['X6_train'] = X6_train[:train_examples]
+    DATA['X6_val'] = X6_train[train_examples:]
+    DATA['product_category_emb'] = product_category_emb
+
+    return DATA
 
 
 # %%
 if not args.load_from_npy:
     mail('start getting train data')
-    x1_train, x1_val, x2_train, x2_val, x3_train, x3_val, y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb = get_train_val()
+    print('从csv文件提取训练数据到array格式，大概十分钟时间')
+    DATA = get_train_val()
     mail('get train data done.')
 
-    def save_data(datas):
+    # 训练数据保存为npy文件
+    dirs = 'tmp/'
+    if not os.path.exists(dirs):
+        os.makedirs(dirs)
+
+    def save_npy(datas, name):
         for i, data in enumerate(datas):
-            np.save(f'tmp/transformer_input_{i}.npy', data)
-    datas = [x1_train, x1_val, x2_train, x2_val, x3_train, x3_val,
-             y_train, y_val, creative_id_emb, ad_id_emb, product_id_emb]
-    save_data(datas)
+            np.save(f'tmp/{name}_{i}.npy', data)
+            print(f'saving tmp/{name}_{i}.npy')
+
+    inputs = [
+        DATA['X1_train'], DATA['X1_val'],
+        DATA['X2_train'], DATA['X2_val'],
+        DATA['X3_train'], DATA['X3_val'],
+        DATA['X4_train'], DATA['X4_val'],
+        DATA['X5_train'], DATA['X5_val'],
+        DATA['X6_train'], DATA['X6_val'],
+    ]
+    outputs_gender = [DATA['Y_gender_train'], DATA['Y_gender_val']]
+    outputs_age = [DATA['Y_age_train'], DATA['Y_age_val']]
+    embeddings = [
+        DATA['creative_id_emb'],
+        DATA['ad_id_emb'],
+        DATA['product_id_emb'],
+        DATA['advertiser_id_emb'],
+        DATA['industry_emb'],
+        DATA['product_category_emb'],
+    ]
+    save_npy(inputs, 'inputs')
+    save_npy(outputs_gender, 'gender')
+    save_npy(outputs_age, 'age')
+    save_npy(embeddings, 'embeddings')
 else:
-    x1_train = np.load('tmp/transformer_input_0.npy', allow_pickle=True)
-    x1_val = np.load('tmp/transformer_input_1.npy', allow_pickle=True)
-    x2_train = np.load('tmp/transformer_input_2.npy', allow_pickle=True)
-    x2_val = np.load('tmp/transformer_input_3.npy', allow_pickle=True)
-    x3_train = np.load('tmp/transformer_input_4.npy', allow_pickle=True)
-    x3_val = np.load('tmp/transformer_input_5.npy', allow_pickle=True)
-    y_train = np.load('tmp/transformer_input_6.npy', allow_pickle=True)
-    y_val = np.load('tmp/transformer_input_7.npy', allow_pickle=True)
-    creative_id_emb = np.load('tmp/transformer_input_8.npy', allow_pickle=True)
-    ad_id_emb = np.load('tmp/transformer_input_9.npy', allow_pickle=True)
-    product_id_emb = np.load('tmp/transformer_input_10.npy', allow_pickle=True)
+    DATA = {}
+    DATA['X1_train'] = np.load('tmp/inputs_0.npy', allow_pickle=True)
+    DATA['X1_val'] = np.load('tmp/inputs_1.npy', allow_pickle=True)
+    DATA['X2_train'] = np.load('tmp/inputs_2.npy', allow_pickle=True)
+    DATA['X2_val'] = np.load('tmp/inputs_3.npy', allow_pickle=True)
+    DATA['X3_train'] = np.load('tmp/inputs_4.npy', allow_pickle=True)
+    DATA['X3_val'] = np.load('tmp/inputs_5.npy', allow_pickle=True)
+    DATA['X4_train'] = np.load('tmp/inputs_6.npy', allow_pickle=True)
+    DATA['X4_val'] = np.load('tmp/inputs_7.npy', allow_pickle=True)
+    DATA['X5_train'] = np.load('tmp/inputs_8.npy', allow_pickle=True)
+    DATA['X5_val'] = np.load('tmp/inputs_9.npy', allow_pickle=True)
+    DATA['X6_train'] = np.load('tmp/inputs_10.npy', allow_pickle=True)
+    DATA['X6_val'] = np.load('tmp/inputs_11.npy', allow_pickle=True)
+    DATA['Y_gender_train'] = np.load('tmp/gender_0.npy', allow_pickle=True)
+    DATA['Y_gender_val'] = np.load('tmp/gender_1.npy', allow_pickle=True)
+    DATA['Y_age_train'] = np.load('tmp/age_0.npy', allow_pickle=True)
+    DATA['Y_age_val'] = np.load('tmp/age_1.npy', allow_pickle=True)
+    DATA['creative_id_emb'] = np.load(
+        'tmp/embeddings_0.npy', allow_pickle=True)
+    DATA['ad_id_emb'] = np.load(
+        'tmp/embeddings_1.npy', allow_pickle=True)
+    DATA['product_id_emb'] = np.load(
+        'tmp/embeddings_2.npy', allow_pickle=True)
+    DATA['advertiser_id_emb'] = np.load(
+        'tmp/embeddings_3.npy', allow_pickle=True)
+    DATA['industry_emb'] = np.load(
+        'tmp/embeddings_4.npy', allow_pickle=True)
+    DATA['product_category_emb'] = np.load(
+        'tmp/embeddings_5.npy', allow_pickle=True)
 
 
 # %%
 # model = get_age_model(creative_id_emb, ad_id_emb, product_id_emb)
-model = get_model_head_concat(creative_id_emb, ad_id_emb, product_id_emb)
+model = get_model_head_concat(DATA)
 # %%
 # 测试数据格式(batch_size, sequence长度)
 # x1 = np.array([1, 2, 3, 4]).reshape(1, -1)
@@ -458,48 +548,48 @@ model = get_model_head_concat(creative_id_emb, ad_id_emb, product_id_emb)
 
 
 # %%
-checkpoint = ModelCheckpoint("tmp/age_epoch_{epoch:02d}.hdf5", save_weights_only=True, monitor='val_loss', verbose=1,
+checkpoint = ModelCheckpoint("tmp/transformer_epoch_{epoch:02d}.hdf5", save_weights_only=True, monitor='val_loss', verbose=1,
                              save_best_only=False, mode='auto', period=1)
 # %%
-# model.fit(
-#     {'creative_id': x1_train, 'ad_id': x2_train},
-#     y_train,
-#     validation_data=([x1_val, x2_val], y_val),
-#     epochs=5,
-#     batch_size=256,
-#     callbacks=[checkpoint],
-# )
-# %%
-debug = False
-if debug:
-    model.fit(
-        {'creative_id': x1_train[:10], 'ad_id': x2_train[:10],
-            'product_id': x3_train[:10]},
-        # {'creative_id': x1_train},
-        y_train[:10],
-        validation_data=([x1_val[:10], x2_val[:10], x3_val[:10]], y_val[:10]),
-        epochs=2,
-        batch_size=5,
-        callbacks=[checkpoint],
-    )
-# %%
 try:
-    mail('start train lstm')
-    examples = args.examples
+    train_examples = args.train_examples
+    val_examples = args.val_examples
+    mail('start train')
     model.fit(
-        {'creative_id': x1_train[:examples], 'ad_id': x2_train[:examples],
-            'product_id': x3_train[:examples]},
-        y_train[:examples],
-        validation_data=([x1_val, x2_val, x3_val], y_val),
+        {
+            'creative_id': DATA['X1_train'][:train_examples],
+            'ad_id': DATA['X2_train'][:train_examples],
+            'product_id': DATA['X3_train'][:train_examples],
+            'advertiser_id': DATA['X4_train'][:train_examples],
+            'industry': DATA['X5_train'][:train_examples],
+            'product_category': DATA['X6_train'][:train_examples]
+        },
+        {
+            'gender': DATA['Y_gender_train'][:train_examples],
+            'age': DATA['Y_age_train'][:train_examples],
+        },
+        validation_data=(
+            {
+                'creative_id': DATA['X1_val'][:val_examples],
+                'ad_id': DATA['X2_val'][:val_examples],
+                'product_id': DATA['X3_val'][:val_examples],
+                'advertiser_id': DATA['X4_val'][:val_examples],
+                'industry': DATA['X5_val'][:val_examples],
+                'product_category': DATA['X6_val'][:val_examples]
+            },
+            {
+                'gender': DATA['Y_gender_val'][:val_examples],
+                'age': DATA['Y_age_val'][:val_examples],
+            },
+        ),
         epochs=args.epoch,
         batch_size=args.batch_size,
         callbacks=[checkpoint],
     )
-    mail('train lstm done!!!')
+    mail('train done!!!')
 except Exception as e:
     e = str(e)
-    mail('train lstm failed!!! ' + e)
-
+    mail('train failed!!! ' + e)
 
 # %%
 # model.load_weights('tmp/gender_epoch_01.hdf5')

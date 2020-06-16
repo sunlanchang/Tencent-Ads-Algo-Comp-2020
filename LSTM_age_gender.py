@@ -430,7 +430,7 @@ def scheduler(epoch):
 
 
 lr = LearningRateScheduler(scheduler)
-checkpoint = ModelCheckpoint("tmp/epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=1,
+checkpoint = ModelCheckpoint("tmp/lstm_epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=1,
                              save_best_only=False, mode='auto', period=1)
 # %%
 try:
