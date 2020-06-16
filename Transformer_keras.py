@@ -21,7 +21,7 @@ from mymail import mail
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 '''
-python Transformer_keras.py --load_from_npy --batch_size 256 --epoch 5 --num_transformer 1 --head_transformer 1 --num_lstm 1 --examples 100000
+python Transformer_keras.py --load_from_npy --batch_size 256 --epoch 5 --num_transformer 1 --head_attention 1 --num_lstm 1 --examples 100000
 '''
 
 # %%
@@ -41,7 +41,7 @@ parser.add_argument('--epoch', type=int,
 parser.add_argument('--num_transformer', type=int,
                     help='transformer层数',
                     default=1)
-parser.add_argument('--head_transformer', type=int,
+parser.add_argument('--head_attention', type=int,
                     help='transformer head个数',
                     default=1)
 parser.add_argument('--num_lstm', type=int,
@@ -278,33 +278,33 @@ def get_model(creative_id_emb, ad_id_emb, product_id_emb):
 # %%
 def get_model_head_concat(DATA):
     embed_dim = 128  # Embedding size for each token
-    num_heads = args.head_transformer  # Number of attention heads
+    num_heads = args.head_attention  # Number of attention heads
     ff_dim = 256  # Hidden layer size in feed forward network inside transformer
     # shape：(sequence长度, )
     # first input
     input_creative_id = Input(shape=(None,), name='creative_id')
     x1 = TokenAndPositionEmbedding(
-        maxlen, NUM_creative_id, embed_dim, DATA['creative_id_emb'])(input_creative_id)
+        maxlen, NUM_creative_id+1, embed_dim, DATA['creative_id_emb'])(input_creative_id)
 
     input_ad_id = Input(shape=(None,), name='ad_id')
     x2 = TokenAndPositionEmbedding(
-        maxlen, NUM_ad_id, embed_dim, DATA['ad_id_emb'])(input_ad_id)
+        maxlen, NUM_ad_id+1, embed_dim, DATA['ad_id_emb'])(input_ad_id)
 
     input_product_id = Input(shape=(None,), name='product_id')
     x3 = TokenAndPositionEmbedding(
-        maxlen, NUM_product_id, embed_dim, DATA['product_id_emb'])(input_product_id)
+        maxlen, NUM_product_id+1, embed_dim, DATA['product_id_emb'])(input_product_id)
 
     input_advertiser_id = Input(shape=(None,), name='advertiser_id')
     x4 = TokenAndPositionEmbedding(
-        maxlen, NUM_advertiser_id, embed_dim, DATA['advertiser_id_emb'])(input_advertiser_id)
+        maxlen, NUM_advertiser_id+1, embed_dim, DATA['advertiser_id_emb'])(input_advertiser_id)
 
     input_industry = Input(shape=(None,), name='industry')
     x5 = TokenAndPositionEmbedding(
-        maxlen, NUM_industry, embed_dim, DATA['industry_emb'])(input_industry)
+        maxlen, NUM_industry+1, embed_dim, DATA['industry_emb'])(input_industry)
 
     input_product_category = Input(shape=(None,), name='product_category')
     x6 = TokenAndPositionEmbedding(
-        maxlen, NUM_product_category, embed_dim, DATA['product_category_emb'])(input_product_category)
+        maxlen, NUM_product_category+1, embed_dim, DATA['product_category_emb'])(input_product_category)
 
     # concat
     # x = x1 + x2 + x3
