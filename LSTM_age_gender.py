@@ -4,8 +4,12 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
+from tensorflow.keras import losses
+from tensorflow.keras import optimizers
 from tensorflow.keras import layers
+from tensorflow.keras import models
+from tensorflow.keras import callbacks
+from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from tensorflow.keras.layers import Input, LSTM, Bidirectional, Embedding, Dense, Dropout, Concatenate
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -40,9 +44,12 @@ parser.add_argument('--epoch', type=int,
 parser.add_argument('--batch_size', type=int,
                     help='batch size大小',
                     default=256)
-parser.add_argument('--examples', type=int,
+parser.add_argument('--train_examples', type=int,
                     help='训练数据，默认为训练集，不包含验证集，调试时候可以设置1000',
                     default=810000)
+parser.add_argument('--val_examples', type=int,
+                    help='验证集数据，调试时候可以设置1000',
+                    default=90000)
 
 
 parser.add_argument('--num_lstm', type=int,
@@ -103,8 +110,10 @@ def get_train_val():
     Y_age = to_categorical(Y_age)
     Y_gender = to_categorical(Y_gender)
 
-    DATA['Y_train'] = Y_age[:train_examples]
-    DATA['Y_val'] = Y_age[train_examples:]
+    DATA['Y_gender_train'] = Y_gender[:train_examples]
+    DATA['Y_gender_val'] = Y_gender[train_examples:]
+    DATA['Y_age_train'] = Y_age[:train_examples]
+    DATA['Y_age_val'] = Y_age[train_examples:]
 
     num_examples = Y_age.shape[0]
     train_examples = int(num_examples * 0.9)
@@ -139,7 +148,36 @@ def get_train_val():
     DATA['X3_val'] = X3_train[train_examples:]
     DATA['product_id_emb'] = product_id_emb
 
-    # 分别对应 x1_train x1_val x2_train x2_val y_train y_val
+    # 第四个输入
+    # 获取 advertiser_id 特征
+    X4_train, tokenizer = get_train(
+        'advertiser_id', NUM_advertiser_id, LEN_advertiser_id)
+    advertiser_id_emb = get_embedding('advertiser_id', tokenizer)
+
+    DATA['X4_train'] = X4_train[:train_examples]
+    DATA['X4_val'] = X4_train[train_examples:]
+    DATA['advertiser_id_emb'] = advertiser_id_emb
+
+    # 第五个输入
+    # 获取 industry 特征
+    X5_train, tokenizer = get_train(
+        'industry', NUM_industry, LEN_industry)
+    industry_emb = get_embedding('industry', tokenizer)
+
+    DATA['X5_train'] = X5_train[:train_examples]
+    DATA['X5_val'] = X5_train[train_examples:]
+    DATA['industry_emb'] = industry_emb
+
+    # 第六个输入
+    # 获取 product_category 特征
+    X6_train, tokenizer = get_train(
+        'product_category', NUM_product_category, LEN_product_category)
+    product_category_emb = get_embedding('product_category', tokenizer)
+
+    DATA['X6_train'] = X6_train[:train_examples]
+    DATA['X6_val'] = X6_train[train_examples:]
+    DATA['product_category_emb'] = product_category_emb
+
     return DATA
 
 # %%
@@ -153,6 +191,9 @@ def get_test():
 LEN_creative_id = 100
 LEN_ad_id = 100
 LEN_product_id = 100
+LEN_advertiser_id = 100
+LEN_industry = 100
+LEN_product_category = 100
 
 
 def get_model(DATA):
@@ -194,7 +235,7 @@ def get_model(DATA):
     x3 = layers.GlobalMaxPooling1D()(x3)
 
     # concat x1 x2
-    x = Concatenate(axis=1)([x1, x2, x3])
+    x = layers.Concatenate(axis=1)([x1, x2, x3])
     # x = Dense(128)(x)
     # x = Dropout(0.1)(x)
     output_y = Dense(10, activation='softmax')(x)
@@ -236,18 +277,60 @@ def get_model_head_concat(DATA):
                    input_length=LEN_product_id,
                    mask_zero=True)(input_product_id)
 
-    x = Concatenate(axis=1)([x1, x2, x3])
+    input_advertiser_id = Input(shape=(None,), name='advertiser_id')
+    x4 = Embedding(input_dim=NUM_advertiser_id,
+                   output_dim=128,
+                   weights=[DATA['advertiser_id_emb']],
+                   trainable=args.not_train_embedding,
+                   input_length=LEN_advertiser_id,
+                   mask_zero=True)(input_advertiser_id)
+
+    input_industry = Input(shape=(None,), name='industry')
+    x5 = Embedding(input_dim=NUM_industry,
+                   output_dim=128,
+                   weights=[DATA['industry_emb']],
+                   trainable=args.not_train_embedding,
+                   input_length=LEN_industry,
+                   mask_zero=True)(input_industry)
+
+    input_product_category = Input(shape=(None,), name='product_category')
+    x6 = Embedding(input_dim=NUM_product_category,
+                   output_dim=128,
+                   weights=[DATA['product_category_emb']],
+                   trainable=args.not_train_embedding,
+                   input_length=LEN_product_category,
+                   mask_zero=True)(input_product_category)
+
+    x = Concatenate(axis=1)([x1, x2, x3, x4, x5, x6])
 
     for _ in range(args.num_lstm):
         x = Bidirectional(LSTM(256, return_sequences=True))(x)
     x = layers.GlobalMaxPooling1D()(x)
     # x = layers.GlobalAvaregePooling1D()(x)
 
-    output_y = Dense(10, activation='softmax')(x)
+    output_gender = Dense(2, activation='softmax', name='gender')(x)
+    output_age = Dense(10, activation='softmax', name='age')(x)
 
-    model = Model([input_creative_id, input_ad_id, input_product_id], output_y)
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='adam', metrics=['accuracy'])
+    model = Model(
+        [
+            input_creative_id,
+            input_ad_id,
+            input_product_id,
+            input_advertiser_id,
+            input_industry,
+            input_product_category
+        ],
+        [
+            output_gender,
+            output_age
+        ]
+    )
+    model.compile(
+        optimizer=optimizers.Adam(1e-4),
+        loss={'gender': losses.CategoricalCrossentropy(from_logits=False),
+              'age': losses.CategoricalCrossentropy(from_logits=False)},
+        loss_weights=[0.5, 0.5],
+        metrics=['accuracy'])
     model.summary()
 
     return model
@@ -269,11 +352,27 @@ if not args.load_from_npy:
         for i, data in enumerate(datas):
             np.save(f'tmp/{name}_{i}.npy', data)
 
-    inputs = [x1_train, x1_val, x2_train, x2_val, x3_train, x3_val]
-    targets = [y_train, y_val]
-    embeddings = [creative_id_emb, ad_id_emb, product_id_emb]
+    inputs = [
+        DATA['X1_train'], DATA['X1_val'],
+        DATA['X2_train'], DATA['X2_val'],
+        DATA['X3_train'], DATA['X3_val'],
+        DATA['X4_train'], DATA['X4_val'],
+        DATA['X5_train'], DATA['X5_val'],
+        DATA['X6_train'], DATA['X6_val'],
+    ]
+    outputs_age = [DATA['Y_train'], DATA['Y_val']]
+    outputs_gender = [DATA['Y_train'], DATA['Y_val']]
+    embeddings = [
+        DATA['creative_id_emb'],
+        DATA['ad_id_emb'],
+        DATA['product_id_emb'],
+        DATA['advertiser_id_emb'],
+        DATA['industry_emb'],
+        DATA['product_category_emb'],
+    ]
     save_npy(inputs, 'inputs')
-    save_npy(targets, 'age')
+    save_npy(outputs_age, 'age')
+    save_npy(outputs_gender, 'gender')
     save_npy(embeddings, 'embeddings')
 else:
     DATA = {}
@@ -283,14 +382,28 @@ else:
     DATA['X2_val'] = np.load('tmp/inputs_3.npy', allow_pickle=True)
     DATA['X3_train'] = np.load('tmp/inputs_4.npy', allow_pickle=True)
     DATA['X3_val'] = np.load('tmp/inputs_5.npy', allow_pickle=True)
-    DATA['Y_train'] = np.load('tmp/age_0.npy', allow_pickle=True)
-    DATA['Y_val'] = np.load('tmp/age_1.npy', allow_pickle=True)
+    DATA['X4_train'] = np.load('tmp/inputs_6.npy', allow_pickle=True)
+    DATA['X4_val'] = np.load('tmp/inputs_7.npy', allow_pickle=True)
+    DATA['X5_train'] = np.load('tmp/inputs_8.npy', allow_pickle=True)
+    DATA['X5_val'] = np.load('tmp/inputs_9.npy', allow_pickle=True)
+    DATA['X6_train'] = np.load('tmp/inputs_10.npy', allow_pickle=True)
+    DATA['X6_val'] = np.load('tmp/inputs_11.npy', allow_pickle=True)
+    DATA['Y_gender_train'] = np.load('tmp/gender_0.npy', allow_pickle=True)
+    DATA['Y_gender_val'] = np.load('tmp/gender_1.npy', allow_pickle=True)
+    DATA['Y_age_train'] = np.load('tmp/age_0.npy', allow_pickle=True)
+    DATA['Y_age_val'] = np.load('tmp/age_1.npy', allow_pickle=True)
     DATA['creative_id_emb'] = np.load(
         'tmp/embeddings_0.npy', allow_pickle=True)
     DATA['ad_id_emb'] = np.load(
         'tmp/embeddings_1.npy', allow_pickle=True)
     DATA['product_id_emb'] = np.load(
         'tmp/embeddings_2.npy', allow_pickle=True)
+    DATA['advertiser_id_emb'] = np.load(
+        'tmp/embeddings_3.npy', allow_pickle=True)
+    DATA['industry_emb'] = np.load(
+        'tmp/embeddings_4.npy', allow_pickle=True)
+    DATA['product_category_emb'] = np.load(
+        'tmp/embeddings_5.npy', allow_pickle=True)
 
 
 # %%
@@ -305,22 +418,48 @@ model = get_model_head_concat(DATA)
 
 
 # %%
+def scheduler(epoch):
+    if epoch < 10:
+        return 0.001
+    else:
+        return 0.001 * tf.math.exp(0.1 * (10 - epoch))
+
+
+lr = LearningRateScheduler(scheduler)
 checkpoint = ModelCheckpoint("tmp/age_epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=1,
                              save_best_only=False, mode='auto', period=1)
-
 # %%
 try:
-    examples = args.examples
+    train_examples = args.train_examples
+    val_examples = args.val_examples
     mail('start train lstm')
     model.fit(
         {
-            'creative_id': DATA['X1_train'][:examples],
-            'ad_id': DATA['X2_train'][:examples],
-            'product_id': DATA['X3_train'][:examples]
+            'creative_id': DATA['X1_train'][:train_examples],
+            'ad_id': DATA['X2_train'][:train_examples],
+            'product_id': DATA['X3_train'][:train_examples]
+            'advertiser_id': DATA['X4_train'][:train_examples],
+            'industry': DATA['X5_train'][:train_examples],
+            'product_category': DATA['X6_train'][:train_examples]
         },
-        DATA['Y_train'][:examples],
-        validation_data=([DATA['X1_val'], DATA['X2_val'],
-                          DATA['X3_val']], DATA['Y_val']),
+        {
+            'gender': DATA['Y_gender_train'][:train_examples],
+            'age': DATA['Y_age_train'][:train_examples],
+        },
+        validation_data=(
+            {
+                'creative_id': DATA['X1_val'][:val_examples],
+                'ad_id': DATA['X2_val'][:val_examples],
+                'product_id': DATA['X3_val'][:val_examples]
+                'advertiser_id': DATA['X4_val'][:val_examples],
+                'industry': DATA['X5_val'][:val_examples],
+                'product_category': DATA['X6_val'][:val_examples]
+            },
+            {
+                'gender': DATA['Y_gender_val'][:val_examples],
+                'age': DATA['Y_age_val'][:val_examples],
+            },
+        ),
         epochs=args.epoch,
         batch_size=args.batch_size,
         callbacks=[checkpoint],

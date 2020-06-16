@@ -249,7 +249,7 @@ def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
     x3 = layers.GlobalMaxPooling1D()(x3)
 
     # concat x1 x2 x3
-    x = concatenate([x1, x2, x3])
+  x = Concatenate(axis=1)([x1, x2, x3])
     # x = x1 + x2 + x3
     x = Dense(20)(x)
     # x = Dropout(0.1)(x)
@@ -282,7 +282,7 @@ def get_model_head_concat(creative_id_emb, ad_id_emb, product_id_emb):
     input_product_id = Input(shape=(None,), name='product_id')
     x3 = TokenAndPositionEmbedding(
         maxlen, NUM_product_id, embed_dim, product_id_emb)(input_product_id)
-
+    
     # x = concatenate([x1, x2, x3])
     x = layers.Concatenate(axis=1)([x1, x2, x3])
 
