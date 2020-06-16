@@ -285,7 +285,7 @@ def get_tail_concat_model(DATA):
     model = Model(
         [
             input_creative_id, input_ad_id, input_product_id,
-            advertiser_id, industry, product_category
+            input_advertiser_id, input_industry, input_product_category
         ],
         output_y)
 
