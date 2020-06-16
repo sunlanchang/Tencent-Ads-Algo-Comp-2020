@@ -338,7 +338,7 @@ def get_model_head_concat(DATA):
         optimizer=optimizers.Adam(1e-4),
         loss={'gender': losses.CategoricalCrossentropy(from_logits=False),
               'age': losses.CategoricalCrossentropy(from_logits=False)},
-        loss_weights=[0.5, 0.5],
+        loss_weights=[0.4, 0.6],
         metrics=['accuracy'])
     model.summary()
 
@@ -469,7 +469,7 @@ def get_train_val():
 # %%
 if not args.load_from_npy:
     mail('start getting train data')
-    print('从csv文件提取训练数据到array格式，大概十分钟时间')
+    print('从csv文件提取训练数据到array格式，大概十几分钟时间')
     DATA = get_train_val()
     mail('get train data done.')
 

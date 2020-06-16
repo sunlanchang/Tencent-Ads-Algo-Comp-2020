@@ -55,6 +55,12 @@ parser.add_argument('--val_examples', type=int,
 parser.add_argument('--num_lstm', type=int,
                     help='LSTM层数个数，目前结果3层比5层好用，1层还在做实验中...',
                     default=1)
+parser.add_argument('--head_concat', action='store_true',
+                    help='从npy文件加载训练数据，不用每次训练都重新生成array文件',
+                    default=False)
+parser.add_argument('--tail_concat', action='store_true',
+                    help='从npy文件加载训练数据，不用每次训练都重新生成array文件',
+                    default=False)
 
 args = parser.parse_args()
 # %%
@@ -199,7 +205,7 @@ LEN_industry = 100
 LEN_product_category = 100
 
 
-def get_model(DATA):
+def get_tail_concat_model(DATA):
     # shape：(sequence长度, )
     # first input
     input_creative_id = Input(shape=(None,), name='creative_id')
@@ -237,23 +243,62 @@ def get_model(DATA):
         x3 = Bidirectional(LSTM(256, return_sequences=True))(x3)
     x3 = layers.GlobalMaxPooling1D()(x3)
 
-    # concat x1 x2
-    x = layers.Concatenate(axis=1)([x1, x2, x3])
-    # x = Dense(128)(x)
-    # x = Dropout(0.1)(x)
-    output_y = Dense(10, activation='softmax')(x)
+    # third input
+    input_advertiser_id = Input(shape=(None,), name='advertiser_id')
+    x4 = Embedding(input_dim=NUM_advertiser_id,
+                   output_dim=128,
+                   weights=[DATA['advertiser_id_emb']],
+                   trainable=args.not_train_embedding,
+                   input_length=LEN_advertiser_id,
+                   mask_zero=True)(input_advertiser_id)
+    for _ in range(args.num_lstm):
+        x4 = Bidirectional(LSTM(256, return_sequences=True))(x4)
+    x4 = layers.GlobalMaxPooling1D()(x4)
 
-    model = Model([input_creative_id, input_ad_id, input_product_id], output_y)
+    # third input
+    input_industry = Input(shape=(None,), name='industry')
+    x5 = Embedding(input_dim=NUM_industry,
+                   output_dim=128,
+                   weights=[DATA['industry_emb']],
+                   trainable=args.not_train_embedding,
+                   input_length=LEN_industry,
+                   mask_zero=True)(input_industry)
+    for _ in range(args.num_lstm):
+        x5 = Bidirectional(LSTM(256, return_sequences=True))(x5)
+    x5 = layers.GlobalMaxPooling1D()(x5)
+
+    # third input
+    input_product_category = Input(shape=(None,), name='product_category')
+    x6 = Embedding(input_dim=NUM_product_category,
+                   output_dim=128,
+                   weights=[DATA['product_category_emb']],
+                   trainable=args.not_train_embedding,
+                   input_length=LEN_product_category,
+                   mask_zero=True)(input_product_category)
+    for _ in range(args.num_lstm):
+        x6 = Bidirectional(LSTM(256, return_sequences=True))(x6)
+    x6 = layers.GlobalMaxPooling1D()(x6)
+
+    x = layers.Concatenate(axis=1)([x1, x2, x3, x4, x5, x6])
+    output_y = Dense(10, activation='softmax', name='age')(x)
+
+    model = Model(
+        [
+            input_creative_id, input_ad_id, input_product_id,
+            advertiser_id, industry, product_category
+        ],
+        output_y)
+
     model.compile(loss='categorical_crossentropy',
                   optimizer='adam', metrics=['accuracy'])
-    model.summary()
 
+    model.summary()
     return model
 
 # %%
 
 
-def get_model_head_concat(DATA):
+def get_head_concat_model(DATA):
     # shape：(sequence长度, )
     # first input
     input_creative_id = Input(shape=(None,), name='creative_id')
@@ -332,7 +377,7 @@ def get_model_head_concat(DATA):
         optimizer=optimizers.Adam(1e-4),
         loss={'gender': losses.CategoricalCrossentropy(from_logits=False),
               'age': losses.CategoricalCrossentropy(from_logits=False)},
-        loss_weights=[0.5, 0.5],
+        loss_weights=[0.4, 0.6],
         metrics=['accuracy'])
     model.summary()
 
@@ -412,7 +457,10 @@ else:
 
 # %%
 # model = get_model(DATA)
-model = get_model_head_concat(DATA)
+if args.head_concat:
+    model = get_head_concat_model(DATA)
+elif args.tail_concat:
+    model = get_tail_concat_model(DATA)
 # %%
 # %%
 # 测试数据格式(batch_size, sequence长度)
@@ -437,37 +485,71 @@ try:
     train_examples = args.train_examples
     val_examples = args.val_examples
     mail('start train lstm')
-    model.fit(
-        {
-            'creative_id': DATA['X1_train'][:train_examples],
-            'ad_id': DATA['X2_train'][:train_examples],
-            'product_id': DATA['X3_train'][:train_examples],
-            'advertiser_id': DATA['X4_train'][:train_examples],
-            'industry': DATA['X5_train'][:train_examples],
-            'product_category': DATA['X6_train'][:train_examples]
-        },
-        {
-            'gender': DATA['Y_gender_train'][:train_examples],
-            'age': DATA['Y_age_train'][:train_examples],
-        },
-        validation_data=(
+    if args.head_concat:
+        model.fit(
             {
-                'creative_id': DATA['X1_val'][:val_examples],
-                'ad_id': DATA['X2_val'][:val_examples],
-                'product_id': DATA['X3_val'][:val_examples],
-                'advertiser_id': DATA['X4_val'][:val_examples],
-                'industry': DATA['X5_val'][:val_examples],
-                'product_category': DATA['X6_val'][:val_examples]
+                'creative_id': DATA['X1_train'][:train_examples],
+                'ad_id': DATA['X2_train'][:train_examples],
+                'product_id': DATA['X3_train'][:train_examples],
+                'advertiser_id': DATA['X4_train'][:train_examples],
+                'industry': DATA['X5_train'][:train_examples],
+                'product_category': DATA['X6_train'][:train_examples]
             },
             {
-                'gender': DATA['Y_gender_val'][:val_examples],
-                'age': DATA['Y_age_val'][:val_examples],
+                'gender': DATA['Y_gender_train'][:train_examples],
+                'age': DATA['Y_age_train'][:train_examples],
             },
-        ),
-        epochs=args.epoch,
-        batch_size=args.batch_size,
-        callbacks=[checkpoint],
-    )
+            validation_data=(
+                {
+                    'creative_id': DATA['X1_val'][:val_examples],
+                    'ad_id': DATA['X2_val'][:val_examples],
+                    'product_id': DATA['X3_val'][:val_examples],
+                    'advertiser_id': DATA['X4_val'][:val_examples],
+                    'industry': DATA['X5_val'][:val_examples],
+                    'product_category': DATA['X6_val'][:val_examples]
+                },
+                {
+                    'gender': DATA['Y_gender_val'][:val_examples],
+                    'age': DATA['Y_age_val'][:val_examples],
+                },
+            ),
+            epochs=args.epoch,
+            batch_size=args.batch_size,
+            callbacks=[checkpoint],
+        )
+    elif args.tail_concat:
+        model.fit(
+            {
+                'creative_id': DATA['X1_train'][:train_examples],
+                'ad_id': DATA['X2_train'][:train_examples],
+                'product_id': DATA['X3_train'][:train_examples],
+                'advertiser_id': DATA['X4_train'][:train_examples],
+                'industry': DATA['X5_train'][:train_examples],
+                'product_category': DATA['X6_train'][:train_examples]
+            },
+            {
+                # 'gender': DATA['Y_gender_train'][:train_examples],
+                'age': DATA['Y_age_train'][:train_examples],
+            },
+            validation_data=(
+                {
+                    'creative_id': DATA['X1_val'][:val_examples],
+                    'ad_id': DATA['X2_val'][:val_examples],
+                    'product_id': DATA['X3_val'][:val_examples],
+                    'advertiser_id': DATA['X4_val'][:val_examples],
+                    'industry': DATA['X5_val'][:val_examples],
+                    'product_category': DATA['X6_val'][:val_examples]
+                },
+                {
+                    # 'gender': DATA['Y_gender_val'][:val_examples],
+                    'age': DATA['Y_age_val'][:val_examples],
+                },
+            ),
+            epochs=args.epoch,
+            batch_size=args.batch_size,
+            callbacks=[checkpoint],
+        )
+
     mail('train lstm done!!!')
 except Exception as e:
     e = str(e)
