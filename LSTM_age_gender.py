@@ -58,12 +58,12 @@ parser.add_argument('--num_lstm', type=int,
 
 args = parser.parse_args()
 # %%
-NUM_creative_id = 2481135+1
-NUM_ad_id = 2264190+1
-NUM_product_id = 33273+1
-NUM_advertiser_id = 52090+1
-NUM_industry = 326+1
-NUM_product_category = 18+1
+NUM_creative_id = 2481135
+NUM_ad_id = 2264190
+NUM_product_id = 33273
+NUM_advertiser_id = 52090
+NUM_industry = 326
+NUM_product_category = 18
 
 
 def get_train_val():
@@ -124,7 +124,7 @@ def get_train_val():
     # 第一个输入
     # 获取 creative_id 特征
     X1_train, tokenizer = get_train(
-        'creative_id', NUM_creative_id, LEN_creative_id)
+        'creative_id', NUM_creative_id+1, LEN_creative_id)
     creative_id_emb = get_embedding('creative_id', tokenizer)
 
     DATA['X1_train'] = X1_train[:train_examples]
@@ -134,7 +134,7 @@ def get_train_val():
     # 第二个输入
     # 获取 ad_id 特征
     X2_train, tokenizer = get_train(
-        'ad_id', NUM_ad_id, LEN_ad_id)
+        'ad_id', NUM_ad_id+1, LEN_ad_id)
     ad_id_emb = get_embedding('ad_id', tokenizer)
 
     DATA['X2_train'] = X2_train[:train_examples]
@@ -144,7 +144,7 @@ def get_train_val():
     # 第三个输入
     # 获取 product_id 特征
     X3_train, tokenizer = get_train(
-        'product_id', NUM_product_id, LEN_product_id)
+        'product_id', NUM_product_id+1, LEN_product_id)
     product_id_emb = get_embedding('product_id', tokenizer)
 
     DATA['X3_train'] = X3_train[:train_examples]
@@ -154,7 +154,7 @@ def get_train_val():
     # 第四个输入
     # 获取 advertiser_id 特征
     X4_train, tokenizer = get_train(
-        'advertiser_id', NUM_advertiser_id, LEN_advertiser_id)
+        'advertiser_id', NUM_advertiser_id+1, LEN_advertiser_id)
     advertiser_id_emb = get_embedding('advertiser_id', tokenizer)
 
     DATA['X4_train'] = X4_train[:train_examples]
@@ -164,7 +164,7 @@ def get_train_val():
     # 第五个输入
     # 获取 industry 特征
     X5_train, tokenizer = get_train(
-        'industry', NUM_industry, LEN_industry)
+        'industry', NUM_industry+1, LEN_industry)
     industry_emb = get_embedding('industry', tokenizer)
 
     DATA['X5_train'] = X5_train[:train_examples]
@@ -174,7 +174,7 @@ def get_train_val():
     # 第六个输入
     # 获取 product_category 特征
     X6_train, tokenizer = get_train(
-        'product_category', NUM_product_category, LEN_product_category)
+        'product_category', NUM_product_category+1, LEN_product_category)
     product_category_emb = get_embedding('product_category', tokenizer)
 
     DATA['X6_train'] = X6_train[:train_examples]
