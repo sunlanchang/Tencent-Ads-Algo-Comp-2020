@@ -257,7 +257,7 @@ def get_model_head_concat(DATA):
     # shape：(sequence长度, )
     # first input
     input_creative_id = Input(shape=(None,), name='creative_id')
-    x1 = Embedding(input_dim=NUM_creative_id,
+    x1 = Embedding(input_dim=NUM_creative_id+1,
                    output_dim=128,
                    weights=[DATA['creative_id_emb']],
                    trainable=args.not_train_embedding,
@@ -265,7 +265,7 @@ def get_model_head_concat(DATA):
                    mask_zero=True)(input_creative_id)
 
     input_ad_id = Input(shape=(None,), name='ad_id')
-    x2 = Embedding(input_dim=NUM_ad_id,
+    x2 = Embedding(input_dim=NUM_ad_id+1,
                    output_dim=128,
                    weights=[DATA['ad_id_emb']],
                    trainable=args.not_train_embedding,
@@ -273,7 +273,7 @@ def get_model_head_concat(DATA):
                    mask_zero=True)(input_ad_id)
 
     input_product_id = Input(shape=(None,), name='product_id')
-    x3 = Embedding(input_dim=NUM_product_id,
+    x3 = Embedding(input_dim=NUM_product_id+1,
                    output_dim=128,
                    weights=[DATA['product_id_emb']],
                    trainable=args.not_train_embedding,
@@ -281,7 +281,7 @@ def get_model_head_concat(DATA):
                    mask_zero=True)(input_product_id)
 
     input_advertiser_id = Input(shape=(None,), name='advertiser_id')
-    x4 = Embedding(input_dim=NUM_advertiser_id,
+    x4 = Embedding(input_dim=NUM_advertiser_id+1,
                    output_dim=128,
                    weights=[DATA['advertiser_id_emb']],
                    trainable=args.not_train_embedding,
@@ -289,7 +289,7 @@ def get_model_head_concat(DATA):
                    mask_zero=True)(input_advertiser_id)
 
     input_industry = Input(shape=(None,), name='industry')
-    x5 = Embedding(input_dim=NUM_industry,
+    x5 = Embedding(input_dim=NUM_industry+1,
                    output_dim=128,
                    weights=[DATA['industry_emb']],
                    trainable=args.not_train_embedding,
@@ -297,7 +297,7 @@ def get_model_head_concat(DATA):
                    mask_zero=True)(input_industry)
 
     input_product_category = Input(shape=(None,), name='product_category')
-    x6 = Embedding(input_dim=NUM_product_category,
+    x6 = Embedding(input_dim=NUM_product_category+1,
                    output_dim=128,
                    weights=[DATA['product_category_emb']],
                    trainable=args.not_train_embedding,
@@ -352,9 +352,9 @@ if not args.load_from_npy:
         os.makedirs(dirs)
 
     def save_npy(datas, name):
-        print(f'saving {name} ...')
         for i, data in enumerate(datas):
             np.save(f'tmp/{name}_{i}.npy', data)
+            print(f'saving tmp/{name}_{i}.npy')
 
     inputs = [
         DATA['X1_train'], DATA['X1_val'],
@@ -430,7 +430,7 @@ def scheduler(epoch):
 
 
 lr = LearningRateScheduler(scheduler)
-checkpoint = ModelCheckpoint("tmp/age_epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=1,
+checkpoint = ModelCheckpoint("tmp/epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=1,
                              save_best_only=False, mode='auto', period=1)
 # %%
 try:
