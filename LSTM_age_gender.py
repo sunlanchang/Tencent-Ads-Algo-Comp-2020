@@ -21,14 +21,14 @@ import argparse
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-# %%
-# 统计creative_id序列的长度，只需要统计一次
-# f = open('word2vec/userid_creative_ids.txt')
-# LEN_creative_id = -1
-# for line in f:
-#     current_line_len = len(line.strip().split(' '))
-#     LEN_creative_id = max(LEN_creative_id, current_line_len)
-# f.close()
+'''
+先进LSTM再concat：
+python LSTM_age_gender.py --epoch 3 --batch_size 128 --train_examples 810000 --val_examples 90000 --num_lstm 3 --tail_concat
+
+先concat再进LSTM
+python LSTM_age_gender.py --epoch 3 --batch_size 128 --train_examples 810000 --val_examples 90000 --num_lstm 3 --head_concat
+'''
+
 # %%
 parser = argparse.ArgumentParser()
 parser.add_argument('--load_from_npy', action='store_true',
