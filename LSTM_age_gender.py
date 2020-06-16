@@ -22,7 +22,7 @@ import argparse
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 '''
-先进LSTM再concat：
+先进LSTM再concat
 python LSTM_age_gender.py --epoch 3 --batch_size 128 --train_examples 810000 --val_examples 90000 --num_lstm 3 --tail_concat
 
 先concat再进LSTM
