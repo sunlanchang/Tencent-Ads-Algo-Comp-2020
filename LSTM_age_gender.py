@@ -486,7 +486,11 @@ def scheduler(epoch):
 
 
 lr = LearningRateScheduler(scheduler)
-checkpoint = ModelCheckpoint("tmp/lstm_tail_concat_epoch_{epoch:02d}.hdf5", monitor='val_loss', verbose=1,
+if args.tail_concat:
+    chpt = "tmp/lstm_tail_concat_epoch_{epoch:02d}.hdf5"
+elif args.head_concat:
+    chpt = "tmp/lstm_head_concat_epoch_{epoch:02d}.hdf5"
+checkpoint = ModelCheckpoint(chpt, monitor='val_loss', verbose=1,
                              save_best_only=False, mode='auto', period=1)
 # %%
 try:
