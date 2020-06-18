@@ -19,7 +19,7 @@ from gensim.models import Word2Vec, KeyedVectors
 from mymail import mail
 import argparse
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 '''
 先进LSTM再concat
@@ -216,8 +216,8 @@ def get_tail_concat_model(DATA, predict_age=True, predict_gender=False):
                    input_length=LEN_creative_id,
                    mask_zero=True)(input_creative_id)
     for _ in range(args.num_lstm):
-        x1 = Bidirectional(LSTM(256, return_sequences=True))(x1)
-    x1 = layers.GlobalMaxPooling1D()(x1)
+        x1 = Bidirectional(LSTM(128, return_sequences=True))(x1)
+    # x1 = layers.GlobalMaxPooling1D()(x1)
 
     # second input
     input_ad_id = Input(shape=(None,), name='ad_id')
@@ -228,8 +228,8 @@ def get_tail_concat_model(DATA, predict_age=True, predict_gender=False):
                    input_length=LEN_ad_id,
                    mask_zero=True)(input_ad_id)
     for _ in range(args.num_lstm):
-        x2 = Bidirectional(LSTM(256, return_sequences=True))(x2)
-    x2 = layers.GlobalMaxPooling1D()(x2)
+        x2 = Bidirectional(LSTM(128, return_sequences=True))(x2)
+    # x2 = layers.GlobalMaxPooling1D()(x2)
 
     # third input
     input_product_id = Input(shape=(None,), name='product_id')
@@ -240,8 +240,8 @@ def get_tail_concat_model(DATA, predict_age=True, predict_gender=False):
                    input_length=LEN_product_id,
                    mask_zero=True)(input_product_id)
     for _ in range(args.num_lstm):
-        x3 = Bidirectional(LSTM(256, return_sequences=True))(x3)
-    x3 = layers.GlobalMaxPooling1D()(x3)
+        x3 = Bidirectional(LSTM(128, return_sequences=True))(x3)
+    # x3 = layers.GlobalMaxPooling1D()(x3)
 
     # third input
     input_advertiser_id = Input(shape=(None,), name='advertiser_id')
@@ -252,8 +252,8 @@ def get_tail_concat_model(DATA, predict_age=True, predict_gender=False):
                    input_length=LEN_advertiser_id,
                    mask_zero=True)(input_advertiser_id)
     for _ in range(args.num_lstm):
-        x4 = Bidirectional(LSTM(256, return_sequences=True))(x4)
-    x4 = layers.GlobalMaxPooling1D()(x4)
+        x4 = Bidirectional(LSTM(128, return_sequences=True))(x4)
+    # x4 = layers.GlobalMaxPooling1D()(x4)
 
     # third input
     input_industry = Input(shape=(None,), name='industry')
@@ -264,8 +264,8 @@ def get_tail_concat_model(DATA, predict_age=True, predict_gender=False):
                    input_length=LEN_industry,
                    mask_zero=True)(input_industry)
     for _ in range(args.num_lstm):
-        x5 = Bidirectional(LSTM(256, return_sequences=True))(x5)
-    x5 = layers.GlobalMaxPooling1D()(x5)
+        x5 = Bidirectional(LSTM(128, return_sequences=True))(x5)
+    # x5 = layers.GlobalMaxPooling1D()(x5)
 
     # third input
     input_product_category = Input(shape=(None,), name='product_category')
@@ -276,10 +276,12 @@ def get_tail_concat_model(DATA, predict_age=True, predict_gender=False):
                    input_length=LEN_product_category,
                    mask_zero=True)(input_product_category)
     for _ in range(args.num_lstm):
-        x6 = Bidirectional(LSTM(256, return_sequences=True))(x6)
-    x6 = layers.GlobalMaxPooling1D()(x6)
+        x6 = Bidirectional(LSTM(128, return_sequences=True))(x6)
+    # x6 = layers.GlobalMaxPooling1D()(x6)
 
-    x = layers.Concatenate(axis=1)([x1, x2, x3, x4, x5, x6])
+    x = layers.Concatenate(axis=2)([x1, x2, x3, x4, x5, x6])
+    x = layers.GlobalMaxPooling1D()(x)
+    
     if predict_age and predict_gender:
         output_gender = Dense(2, activation='softmax', name='gender')(x)
         output_age = Dense(10, activation='softmax', name='age')(x)
@@ -356,10 +358,10 @@ def get_head_concat_model(DATA):
                    input_length=LEN_product_category,
                    mask_zero=True)(input_product_category)
 
-    x = Concatenate(axis=1)([x1, x2, x3, x4, x5, x6])
+    x = Concatenate(axis=2)([x1, x2, x3, x4, x5, x6])
 
     for _ in range(args.num_lstm):
-        x = Bidirectional(LSTM(256, return_sequences=True))(x)
+        x = Bidirectional(LSTM(128, return_sequences=True))(x)
     x = layers.GlobalMaxPooling1D()(x)
     # x = layers.GlobalAvaregePooling1D()(x)
 
@@ -384,7 +386,7 @@ def get_head_concat_model(DATA):
         optimizer=optimizers.Adam(1e-4),
         loss={'gender': losses.CategoricalCrossentropy(from_logits=False),
               'age': losses.CategoricalCrossentropy(from_logits=False)},
-        loss_weights=[0.4, 0.6],
+        loss_weights=[0.5, 0.5],
         metrics=['accuracy'])
     model.summary()
 
@@ -467,7 +469,7 @@ else:
 if args.head_concat:
     model = get_head_concat_model(DATA)
 elif args.tail_concat:
-    model = get_tail_concat_model(DATA, predict_age=False, predict_gender=True)
+    model = get_tail_concat_model(DATA, predict_age=True, predict_gender=True)
 # %%
 # 测试数据格式(batch_size, sequence长度)
 # x1 = np.array([1, 2, 3, 4]).reshape(1, -1)
