@@ -498,7 +498,7 @@ try:
     val_examples = args.val_examples
     mail('start train lstm')
     if args.head_concat:
-        model.load_weights('tmp/lstm_epoch_05.hdf5')
+        # model.load_weights('tmp/lstm_epoch_05.hdf5')
         model.fit(
             {
                 'creative_id': DATA['X1_train'][:train_examples],
@@ -600,3 +600,15 @@ except Exception as e:
 # mail('predict lstm gender done')
 
 # %%
+def merge_age_gender_csv():
+    import pandas as pd
+    gender = pd.read_csv('data/ans/lstm_gender.csv')
+    age = pd.read_csv('data/ans/lstm_age.csv')
+    # %%
+    ans['predicted_gender'] = gender.predicted_gender
+    ans['predicted_age'] = age.predicted_age
+    ans.to_csv('data/ans/LSTM.csv', header=True, index=False,
+            columns=['user_id', 'predicted_age', 'predicted_gender'])
+    # %%
+    # mail('save ans to csv done!')
+    # %%
