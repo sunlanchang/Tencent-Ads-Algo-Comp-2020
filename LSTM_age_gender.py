@@ -534,7 +534,7 @@ try:
                 'product_category': DATA['X6_train'][:train_examples]
             },
             {
-                # 'gender': DATA['Y_gender_train'][:train_examples],
+                'gender': DATA['Y_gender_train'][:train_examples],
                 'age': DATA['Y_age_train'][:train_examples],
             },
             validation_data=(
@@ -547,7 +547,7 @@ try:
                     'product_category': DATA['X6_val'][:val_examples]
                 },
                 {
-                    # 'gender': DATA['Y_gender_val'][:val_examples],
+                    'gender': DATA['Y_gender_val'][:val_examples],
                     'age': DATA['Y_age_val'][:val_examples],
                 },
             ),
@@ -560,7 +560,6 @@ try:
 except Exception as e:
     e = str(e)
     mail('train lstm failed!!! ' + e)
-
 
 # %%
 # 后续为预测过程，暂时注释掉不使用但是不要删除
