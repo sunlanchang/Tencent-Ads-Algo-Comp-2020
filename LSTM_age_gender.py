@@ -26,7 +26,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 python LSTM_age_gender.py --epoch 3 --batch_size 128 --train_examples 810000 --val_examples 90000 --num_lstm 3 --tail_concat
 
 先concat再进LSTM
-python LSTM_age_gender.py --epoch 3 --batch_size 128 --train_examples 810000 --val_examples 90000 --num_lstm 3 --head_concat
+python LSTM_age_gender.py --load_from_npy --epoch 3 --batch_size 128 --train_examples 810000 --val_examples 90000 --num_lstm 3 --head_concat
 '''
 
 # %%
@@ -205,7 +205,7 @@ LEN_industry = 100
 LEN_product_category = 100
 
 
-def get_tail_concat_model(DATA):
+def get_tail_concat_model(DATA, predict_age=True, predict_gender=False):
     # shape：(sequence长度, )
     # first input
     input_creative_id = Input(shape=(None,), name='creative_id')
@@ -280,7 +280,14 @@ def get_tail_concat_model(DATA):
     x6 = layers.GlobalMaxPooling1D()(x6)
 
     x = layers.Concatenate(axis=1)([x1, x2, x3, x4, x5, x6])
-    output_y = Dense(10, activation='softmax', name='age')(x)
+    if predict_age and predict_gender:
+        output_gender = Dense(2, activation='softmax', name='gender')(x)
+        output_age = Dense(10, activation='softmax', name='age')(x)
+        output_y = [output_gender, output_age]
+    elif predict_age:
+        output_y = Dense(10, activation='softmax', name='age')(x)
+    elif predict_gender:
+        output_y = Dense(2, activation='softmax', name='gender')(x)
 
     model = Model(
         [
@@ -460,8 +467,7 @@ else:
 if args.head_concat:
     model = get_head_concat_model(DATA)
 elif args.tail_concat:
-    model = get_tail_concat_model(DATA)
-# %%
+    model = get_tail_concat_model(DATA, predict_age=False, predict_gender=True)
 # %%
 # 测试数据格式(batch_size, sequence长度)
 # x1 = np.array([1, 2, 3, 4]).reshape(1, -1)
