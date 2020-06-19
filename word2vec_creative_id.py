@@ -12,8 +12,8 @@ import pickle
 from mail import mail
 # %%
 df_train = pd.read_csv(
-    'data/train_preliminary/clicklog_ad_user_train_eval_test.csv')
-df_test = pd.read_csv('data/test/clicklog_ad_user_test.csv')
+    'data/click_log_ad.csv')
+# df_test = pd.read_csv('data/test/clicklog_ad_user_test.csv')
 columns = ['user_id', 'creative_id', 'time']
 frame = [df_train[columns], df_test[columns]]
 df_train_test = pd.concat(frame, ignore_index=True)

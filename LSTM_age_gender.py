@@ -79,7 +79,7 @@ def get_train_val():
 
     # 提取词向量文件
     def get_embedding(feature_name, tokenizer):
-        path = f"word2vec/wordvectors_{feature_name}.kv"
+        path = f"word2vec_new/{feature_name}.kv"
         wv = KeyedVectors.load(path, mmap='r')
         feature_tokens = list(wv.vocab.keys())
         embedding_dim = 128
@@ -94,13 +94,13 @@ def get_train_val():
 
     # 从序列文件提取array格式数据
     def get_train(feature_name, vocab_size, len_feature):
-        f = open(f'word2vec/userid_{feature_name}s.txt')
+        f = open(f'word2vec_new/{feature_name}.txt')
         tokenizer = Tokenizer(num_words=vocab_size)
         tokenizer.fit_on_texts(f)
         f.close()
 
         feature_seq = []
-        with open(f'word2vec/userid_{feature_name}s.txt') as f:
+        with open(f'word2vec_new/{feature_name}.txt') as f:
             for text in f:
                 feature_seq.append(text.strip())
 
