@@ -9,7 +9,7 @@ from gensim.models import Word2Vec
 from gensim.models import KeyedVectors
 from gensim.test.utils import common_texts, get_tmpfile
 import pickle
-from mail import mail
+from mymail import mail
 # %%
 df_train = pd.read_csv(
     'data/train_preliminary/clicklog_ad_user_train_eval_test.csv')
