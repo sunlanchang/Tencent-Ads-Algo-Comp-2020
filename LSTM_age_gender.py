@@ -95,7 +95,8 @@ def get_train_val():
     # 从序列文件提取array格式数据
     def get_train(feature_name, vocab_size, len_feature):
         f = open(f'word2vec_new/{feature_name}.txt')
-        tokenizer = Tokenizer(num_words=vocab_size)
+        # tokenizer = Tokenizer(num_words=vocab_size)
+        tokenizer = Tokenizer(num_words=None)
         tokenizer.fit_on_texts(f)
         f.close()
 
@@ -284,7 +285,7 @@ def get_tail_concat_model(DATA, predict_age=True, predict_gender=False):
 
     x = layers.Concatenate(axis=2)([x1, x2, x3, x4, x5, x6])
     x = layers.GlobalMaxPooling1D()(x)
-    
+
     if predict_age and predict_gender:
         output_gender = Dense(2, activation='softmax', name='gender')(x)
         output_age = Dense(10, activation='softmax', name='age')(x)
@@ -611,7 +612,7 @@ def merge_age_gender_csv():
     ans['predicted_gender'] = gender.predicted_gender
     ans['predicted_age'] = age.predicted_age
     ans.to_csv('data/ans/LSTM.csv', header=True, index=False,
-            columns=['user_id', 'predicted_age', 'predicted_gender'])
+               columns=['user_id', 'predicted_age', 'predicted_gender'])
     # %%
     # mail('save ans to csv done!')
     # %%
