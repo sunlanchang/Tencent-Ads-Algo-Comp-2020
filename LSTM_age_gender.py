@@ -83,13 +83,17 @@ def get_train_val():
         wv = KeyedVectors.load(path, mmap='r')
         feature_tokens = list(wv.vocab.keys())
         embedding_dim = 128
-        embedding_matrix = np.random.randn(
-            len(feature_tokens)+1, embedding_dim)
+        # embedding_matrix = np.random.randn(
+        # len(feature_tokens)+1, embedding_dim, dtype=float)
+        embedding_matrix = np.zeros(
+            (len(feature_tokens)+1, embedding_dim), dtype=float)
         # 得到索引
         for word, i in tokenizer.word_index.items():
             embedding_vector = wv[word]
             if embedding_vector is not None:
                 embedding_matrix[i] = embedding_vector
+            else:
+                print(str(word)+' 没有找到')
         return embedding_matrix
 
     # 从序列文件提取array格式数据
@@ -303,7 +307,8 @@ def get_tail_concat_model(DATA, predict_age=True, predict_gender=False):
         output_y)
 
     model.compile(loss='categorical_crossentropy',
-                  optimizer='adam', metrics=['accuracy'])
+                  optimizer=optimizers.Adam(1e-3),
+                  metrics=['accuracy'])
 
     model.summary()
     return model

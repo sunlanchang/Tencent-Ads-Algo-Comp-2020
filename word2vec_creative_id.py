@@ -11,31 +11,30 @@ from gensim.test.utils import common_texts, get_tmpfile
 import pickle
 from mymail import mail
 # %%
-df_train = pd.read_csv(
+df = pd.read_csv(
     'data/click_log_ad.csv')
 # df_test = pd.read_csv('data/test/clicklog_ad_user_test.csv')
-columns = ['user_id', 'creative_id', 'time']
-frame = [df_train[columns], df_test[columns]]
-df_train_test = pd.concat(frame, ignore_index=True)
-df_train_test_sorted = df_train_test.sort_values(
-    ["user_id", "time"], ascending=(True, True))
+columns = ['user_id', 'creative_id']
+# frame = [df_train[columns], df_test[columns]]
+# df_train_test = pd.concat(frame, ignore_index=True)
+# df_train_test_sorted = df_train_test.sort_values(
+#     ["user_id", "time"], ascending=(True, True))
 # %%
 with open('word2vec/df_train_test_sorted.pkl', 'wb') as f:
     pickle.dump(df_train_test_sorted, f)
-# %%
 with open('word2vec/df_train_test_sorted.pkl', 'rb') as f:
     df_train_test_sorted = pickle.load(f)
 # %%
-userid_creative_ids = df_train_test_sorted.groupby(
-    'user_id')['creative_id'].apply(list).reset_index(name='creative_ids')
+userid_creative_id = df.groupby(
+    'user_id')['creative_id'].apply(list).reset_index(name='creative_id')
 # %%
-with open('word2vec/userid_creative_ids.txt', 'w')as f:
-    for ids in userid_creative_ids.creative_ids:
+with open('word2vec_new/creative_id.txt', 'w')as f:
+    for ids in userid_creative_id.creative_ids:
         ids = [str(e) for e in ids]
         line = ' '.join(ids)
         f.write(line+'\n')
 # %%
-sentences = LineSentence('word2vec/userid_creative_ids.txt')
+sentences = LineSentence('word2vec_new/creative_id.txt')
 dimension_embedding = 128
 model = Word2Vec(sentences, size=dimension_embedding,
                  window=10, min_count=1, workers=-1, iter=10, sg=1)
