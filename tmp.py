@@ -1,48 +1,64 @@
-def get_age_model(creative_id_emb, ad_id_emb, product_id_emb):
-    embed_dim = 128  # Embedding size for each token
-    num_heads = 1  # Number of attention heads
-    ff_dim = 256  # Hidden layer size in feed forward network inside transformer
-
-    # shape：(sequence长度, )
-    # first input
-    input_creative_id = Input(shape=(None,), name='creative_id')
-    x1 = TokenAndPositionEmbedding(
-        maxlen, NUM_creative_id, embed_dim, creative_id_emb)(input_creative_id)
-    for _ in range(args.num_transformer):
-        x1 = TransformerBlock(embed_dim, num_heads, ff_dim)(x1)
-    for _ in range(args.num_lstm):
-        x1 = Bidirectional(LSTM(256, return_sequences=True))(x1)
-    x1 = layers.GlobalMaxPooling1D()(x1)
-
-    # second input
-    input_ad_id = Input(shape=(None,), name='ad_id')
-    x2 = TokenAndPositionEmbedding(
-        maxlen, NUM_ad_id, embed_dim, ad_id_emb)(input_ad_id)
-    for _ in range(args.num_transformer):
-        x2 = TransformerBlock(embed_dim, num_heads, ff_dim)(x2)
-    for _ in range(args.num_lstm):
-        x2 = Bidirectional(LSTM(256, return_sequences=True))(x2)
-    x2 = layers.GlobalMaxPooling1D()(x2)
-
-    # third input
-    input_product_id = Input(shape=(None,), name='product_id')
-    x3 = TokenAndPositionEmbedding(
-        maxlen, NUM_product_id, embed_dim, product_id_emb)(input_product_id)
-    for _ in range(args.num_transformer):
-        x3 = TransformerBlock(embed_dim, num_heads, ff_dim)(x3)
-    for _ in range(args.num_lstm):
-        x3 = Bidirectional(LSTM(256, return_sequences=True))(x3)
-    x3 = layers.GlobalMaxPooling1D()(x3)
-
-    # concat x1 x2 x3
-    x = concatenate([x1, x2, x3])
-    # x = x1 + x2 + x3
-    x = Dense(20)(x)
-    output_y = Dense(10, activation='softmax')(x)
-
-    model = Model([input_creative_id, input_ad_id, input_product_id], output_y)
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='adam', metrics=['accuracy'])
-    model.summary()
-
-    return model
+from numpy import asarray
+from numpy import zeros
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import Flatten
+from keras.layers import Embedding
+# define documents
+docs = ['Well done!',
+        'Good work',
+        'Great effort',
+        'nice work',
+        'Excellent!',
+        'Weak',
+        'Poor effort!',
+        'not good',
+        'poor work',
+        'Could have done better.']
+# define class labels
+labels = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
+# prepare tokenizer
+t = Tokenizer()
+t.fit_on_texts(docs)
+vocab_size = len(t.word_index) + 1
+# integer encode the documents
+encoded_docs = t.texts_to_sequences(docs)
+print(encoded_docs)
+# pad documents to a max length of 4 words
+max_length = 4
+padded_docs = pad_sequences(encoded_docs, maxlen=max_length, padding='post')
+print(padded_docs)
+# load the whole embedding into memory
+embeddings_index = dict()
+f = open('../glove_data/glove.6B/glove.6B.100d.txt')
+for line in f:
+    values = line.split()
+    word = values[0]
+    coefs = asarray(values[1:], dtype='float32')
+    embeddings_index[word] = coefs
+f.close()
+print('Loaded %s word vectors.' % len(embeddings_index))
+# create a weight matrix for words in training docs
+embedding_matrix = zeros((vocab_size, 100))
+for word, i in t.word_index.items():
+    embedding_vector = embeddings_index.get(word)
+    if embedding_vector is not None:
+        embedding_matrix[i] = embedding_vector
+# define model
+model = Sequential()
+e = Embedding(vocab_size, 100, weights=[
+              embedding_matrix], input_length=4, trainable=False)
+model.add(e)
+model.add(Flatten())
+model.add(Dense(1, activation='sigmoid'))
+# compile the model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['acc'])
+# summarize the model
+print(model.summary())
+# fit the model
+model.fit(padded_docs, labels, epochs=50, verbose=0)
+# evaluate the model
+loss, accuracy = model.evaluate(padded_docs, labels, verbose=0)
+print('Accuracy: %f' % (accuracy*100))

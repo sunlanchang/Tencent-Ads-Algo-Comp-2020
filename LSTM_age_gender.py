@@ -85,11 +85,11 @@ def get_train_val():
         embedding_dim = 128
         embedding_matrix = np.random.randn(
             len(feature_tokens)+1, embedding_dim)
-        for feature in feature_tokens:
-            embedding_vector = wv[feature]
+        # 得到索引
+        for word, i in tokenizer.word_index.items():
+            embedding_vector = wv[word]
             if embedding_vector is not None:
-                index = tokenizer.texts_to_sequences([feature])[0][0]
-                embedding_matrix[index] = embedding_vector
+                embedding_matrix[i] = embedding_vector
         return embedding_matrix
 
     # 从序列文件提取array格式数据
