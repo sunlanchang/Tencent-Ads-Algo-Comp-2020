@@ -201,11 +201,17 @@ class TokenAndPositionEmbedding(layers.Layer):
 
 
 # %%
-NUM_creative_id = 2481135  # embedding词表大小+1，其中+1为了未出现在此表中的UNK词
-NUM_ad_id = 2264190
-NUM_product_id = 33273
-NUM_advertiser_id = 52090
-NUM_industry = 326
+# NUM_creative_id = 2481135  # embedding词表大小+1，其中+1为了未出现在此表中的UNK词
+# NUM_ad_id = 2264190
+# NUM_product_id = 33273
+# NUM_advertiser_id = 52090
+# NUM_industry = 326
+# NUM_product_category = 18
+NUM_creative_id = 3412772
+NUM_ad_id = 3027360
+NUM_product_id = 39057
+NUM_advertiser_id = 57870
+NUM_industry = 332
 NUM_product_category = 18
 
 LEN_creative_id = 100
@@ -284,27 +290,27 @@ def get_model_head_concat(DATA):
     # first input
     input_creative_id = Input(shape=(None,), name='creative_id')
     x1 = TokenAndPositionEmbedding(
-        maxlen, NUM_creative_id+1, embed_dim, DATA['creative_id_emb'])(input_creative_id)
+        maxlen, NUM_creative_id, embed_dim, DATA['creative_id_emb'])(input_creative_id)
 
     input_ad_id = Input(shape=(None,), name='ad_id')
     x2 = TokenAndPositionEmbedding(
-        maxlen, NUM_ad_id+1, embed_dim, DATA['ad_id_emb'])(input_ad_id)
+        maxlen, NUM_ad_id, embed_dim, DATA['ad_id_emb'])(input_ad_id)
 
     input_product_id = Input(shape=(None,), name='product_id')
     x3 = TokenAndPositionEmbedding(
-        maxlen, NUM_product_id+1, embed_dim, DATA['product_id_emb'])(input_product_id)
+        maxlen, NUM_product_id, embed_dim, DATA['product_id_emb'])(input_product_id)
 
     input_advertiser_id = Input(shape=(None,), name='advertiser_id')
     x4 = TokenAndPositionEmbedding(
-        maxlen, NUM_advertiser_id+1, embed_dim, DATA['advertiser_id_emb'])(input_advertiser_id)
+        maxlen, NUM_advertiser_id, embed_dim, DATA['advertiser_id_emb'])(input_advertiser_id)
 
     input_industry = Input(shape=(None,), name='industry')
     x5 = TokenAndPositionEmbedding(
-        maxlen, NUM_industry+1, embed_dim, DATA['industry_emb'])(input_industry)
+        maxlen, NUM_industry, embed_dim, DATA['industry_emb'])(input_industry)
 
     input_product_category = Input(shape=(None,), name='product_category')
     x6 = TokenAndPositionEmbedding(
-        maxlen, NUM_product_category+1, embed_dim, DATA['product_category_emb'])(input_product_category)
+        maxlen, NUM_product_category, embed_dim, DATA['product_category_emb'])(input_product_category)
 
     # concat
     # x = x1 + x2 + x3
@@ -352,7 +358,7 @@ def get_train_val():
 
     # 提取词向量文件
     def get_embedding(feature_name, tokenizer):
-        path = f"word2vec/wordvectors_{feature_name}.kv"
+        path = f'word2vec_new/{feature_name}.kv'
         wv = KeyedVectors.load(path, mmap='r')
         feature_tokens = list(wv.vocab.keys())
         embedding_dim = 128
@@ -367,13 +373,13 @@ def get_train_val():
 
     # 从序列文件提取array格式数据
     def get_train(feature_name, vocab_size, len_feature):
-        f = open(f'word2vec/userid_{feature_name}s.txt')
+        f = open(f'word2vec_new/{feature_name}.txt')
         tokenizer = Tokenizer(num_words=vocab_size)
         tokenizer.fit_on_texts(f)
         f.close()
 
         feature_seq = []
-        with open(f'word2vec/userid_{feature_name}s.txt') as f:
+        with open(f'word2vec_new/{feature_name}.txt') as f:
             for text in f:
                 feature_seq.append(text.strip())
 
