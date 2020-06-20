@@ -67,11 +67,11 @@ parser.add_argument('--tail_concat', action='store_true',
 
 args = parser.parse_args()
 # %%
-NUM_creative_id = 2481135
-NUM_ad_id = 2264190
-NUM_product_id = 33273
-NUM_advertiser_id = 52090
-NUM_industry = 326
+NUM_creative_id = 3412772
+NUM_ad_id = 3027360
+NUM_product_id = 39057
+NUM_advertiser_id = 57870
+NUM_industry = 332
 NUM_product_category = 18
 
 
