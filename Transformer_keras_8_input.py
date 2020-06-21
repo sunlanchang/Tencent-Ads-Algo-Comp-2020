@@ -1,16 +1,4 @@
 # %%
-# 生成词嵌入文件
-from layers import Add, LayerNormalization
-from layers import MultiHeadAttention, PositionWiseFeedForward
-from layers import PositionEncoding
-from tensorflow.keras.callbacks import Callback
-import tensorflow.keras.backend as K
-from mymail import mail
-from gensim.models import Word2Vec, KeyedVectors
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.models import Model, Sequential
 import os
 from tqdm import tqdm
 import numpy as np
@@ -28,6 +16,12 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.utils import to_categorical
 from gensim.models import Word2Vec, KeyedVectors
+from layers import Add, LayerNormalization
+from layers import MultiHeadAttention, PositionWiseFeedForward
+from layers import PositionEncoding
+from tensorflow.keras.callbacks import Callback
+import tensorflow.keras.backend as K
+
 from mymail import mail
 
 
@@ -427,6 +421,26 @@ def get_train_val():
     DATA['X6_train'] = X6_train[:train_examples]
     DATA['X6_val'] = X6_train[train_examples:]
     DATA['product_category_emb'] = product_category_emb
+
+    # 第七个输入
+    print('获取 time 特征')
+    X7_train, tokenizer = get_train(
+        'time', NUM_time+1, LEN_time)
+    time_emb = get_embedding('time', tokenizer)
+
+    DATA['X7_train'] = X7_train[:train_examples]
+    DATA['X7_val'] = X7_train[train_examples:]
+    DATA['time_emb'] = time_emb
+
+    # 第八个输入
+    print('获取 click_times 特征')
+    X6_train, tokenizer = get_train(
+        'click_times', NUM_click_times+1, LEN_click_times)
+    click_times_emb = get_embedding('click_times', tokenizer)
+
+    DATA['X6_train'] = X6_train[:train_examples]
+    DATA['X6_val'] = X6_train[train_examples:]
+    DATA['click_times_emb'] = click_times_emb
 
     return DATA
 

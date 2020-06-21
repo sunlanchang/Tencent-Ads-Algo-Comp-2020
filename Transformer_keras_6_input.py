@@ -82,15 +82,12 @@ NUM_advertiser_id = 57870
 NUM_industry = 332
 NUM_product_category = 18
 
-vocab_size = 5000
-max_seq_len = 100
-
-LEN_creative_id = 100
-LEN_ad_id = 100
-LEN_product_id = 100
-LEN_advertiser_id = 100
-LEN_industry = 100
-LEN_product_category = 100
+LEN_creative_id = 150
+LEN_ad_id = 150
+LEN_product_id = 150
+LEN_advertiser_id = 150
+LEN_industry = 150
+LEN_product_category = 150
 
 # %%
 
@@ -207,64 +204,64 @@ def get_gender_model(DATA):
 def get_age_model(DATA):
 
     feed_forward_size = 2048
-    max_seq_len = 100
-    model_dim = 128*6
+    max_seq_len = 150
+    model_dim = 256+256+64+32+8+16
 
     input_creative_id = Input(shape=(max_seq_len,), name='creative_id')
     x1 = Embedding(input_dim=NUM_creative_id+1,
-                   output_dim=128,
+                   output_dim=256,
                    weights=[DATA['creative_id_emb']],
                    trainable=args.not_train_embedding,
                    #    trainable=False,
-                   input_length=100,
+                   input_length=max_seq_len,
                    mask_zero=True)(input_creative_id)
     # encodings = PositionEncoding(model_dim)(x1)
     # encodings = Add()([embeddings, encodings])
 
     input_ad_id = Input(shape=(max_seq_len,), name='ad_id')
     x2 = Embedding(input_dim=NUM_ad_id+1,
-                   output_dim=128,
+                   output_dim=256,
                    weights=[DATA['ad_id_emb']],
                    trainable=args.not_train_embedding,
                    #    trainable=False,
-                   input_length=100,
+                   input_length=max_seq_len,
                    mask_zero=True)(input_ad_id)
 
     input_product_id = Input(shape=(max_seq_len,), name='product_id')
     x3 = Embedding(input_dim=NUM_product_id+1,
-                   output_dim=128,
+                   output_dim=256,
                    weights=[DATA['product_id_emb']],
                    trainable=args.not_train_embedding,
                    #    trainable=False,
-                   input_length=100,
+                   input_length=max_seq_len,
                    mask_zero=True)(input_product_id)
 
     input_advertiser_id = Input(shape=(max_seq_len,), name='advertiser_id')
     x4 = Embedding(input_dim=NUM_advertiser_id+1,
-                   output_dim=128,
+                   output_dim=256,
                    weights=[DATA['advertiser_id_emb']],
                    trainable=args.not_train_embedding,
                    #    trainable=False,
-                   input_length=100,
+                   input_length=max_seq_len,
                    mask_zero=True)(input_advertiser_id)
 
     input_industry = Input(shape=(max_seq_len,), name='industry')
     x5 = Embedding(input_dim=NUM_industry+1,
-                   output_dim=128,
+                   output_dim=256,
                    weights=[DATA['industry_emb']],
                    trainable=args.not_train_embedding,
                    #    trainable=False,
-                   input_length=100,
+                   input_length=max_seq_len,
                    mask_zero=True)(input_industry)
 
     input_product_category = Input(
         shape=(max_seq_len,), name='product_category')
     x6 = Embedding(input_dim=NUM_product_category+1,
-                   output_dim=128,
+                   output_dim=256,
                    weights=[DATA['product_category_emb']],
                    trainable=args.not_train_embedding,
                    #    trainable=False,
-                   input_length=100,
+                   input_length=max_seq_len,
                    mask_zero=True)(input_product_category)
 
     # (bs, 100, 128*2)
@@ -273,7 +270,8 @@ def get_age_model(DATA):
     masks = tf.equal(input_creative_id, 0)
 
     # (bs, 100, 128*2)
-    attention_out = MultiHeadAttention(8, 96)(
+    # concat之后是632
+    attention_out = MultiHeadAttention(8, 76)(
         [encodings, encodings, encodings, masks])
 
     # Add & Norm

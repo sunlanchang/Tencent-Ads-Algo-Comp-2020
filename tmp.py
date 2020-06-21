@@ -1,64 +1,55 @@
-from numpy import asarray
-from numpy import zeros
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import Flatten
-from keras.layers import Embedding
-# define documents
-docs = ['Well done!',
-        'Good work',
-        'Great effort',
-        'nice work',
-        'Excellent!',
-        'Weak',
-        'Poor effort!',
-        'not good',
-        'poor work',
-        'Could have done better.']
-# define class labels
-labels = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
-# prepare tokenizer
-t = Tokenizer()
-t.fit_on_texts(docs)
-vocab_size = len(t.word_index) + 1
-# integer encode the documents
-encoded_docs = t.texts_to_sequences(docs)
-print(encoded_docs)
-# pad documents to a max length of 4 words
-max_length = 4
-padded_docs = pad_sequences(encoded_docs, maxlen=max_length, padding='post')
-print(padded_docs)
-# load the whole embedding into memory
-embeddings_index = dict()
-f = open('../glove_data/glove.6B/glove.6B.100d.txt')
-for line in f:
-    values = line.split()
-    word = values[0]
-    coefs = asarray(values[1:], dtype='float32')
-    embeddings_index[word] = coefs
-f.close()
-print('Loaded %s word vectors.' % len(embeddings_index))
-# create a weight matrix for words in training docs
-embedding_matrix = zeros((vocab_size, 100))
-for word, i in t.word_index.items():
-    embedding_vector = embeddings_index.get(word)
-    if embedding_vector is not None:
-        embedding_matrix[i] = embedding_vector
-# define model
-model = Sequential()
-e = Embedding(vocab_size, 100, weights=[
-              embedding_matrix], input_length=4, trainable=False)
-model.add(e)
-model.add(Flatten())
-model.add(Dense(1, activation='sigmoid'))
-# compile the model
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['acc'])
-# summarize the model
-print(model.summary())
-# fit the model
-model.fit(padded_docs, labels, epochs=50, verbose=0)
-# evaluate the model
-loss, accuracy = model.evaluate(padded_docs, labels, verbose=0)
-print('Accuracy: %f' % (accuracy*100))
+import pandas as pd
+import numpy as np
+
+DATA = {}
+DATA['ad_id_emb'] = np.load(
+    'tmp/embeddings_0.npy', allow_pickle=True)
+arr = DATA['ad_id_emb']
+
+result = []
+for i in range(arr.shape[-1]):
+    result.append([np.mean(arr[:, i]), np.std(arr[:, i])])
+dfi = pd.DataFrame(result, columns=['mean', 'std'])
+print(dfi.describe().T)
+# from gensim.models import Word2Vec
+# from gensim.models.callbacks import CallbackAny2Vec
+
+
+# class LossCallback(CallbackAny2Vec):
+#     '''Callback to print loss after each epoch.'''
+
+#     def __init__(self):
+#         self.epoch = 0
+#         self.loss_to_be_subed = 0
+
+#     def on_epoch_end(self, model):
+#         loss = model.get_latest_training_loss()
+#         loss_now = loss - self.loss_to_be_subed
+#         self.loss_to_be_subed = loss
+#         print('Loss after epoch {}: {}'.format(self.epoch, loss_now))
+#         self.epoch += 1
+
+
+# model = Word2Vec(common_texts, size=100, window=5, min_count=1,
+#                  compute_loss=True, callbacks=[LossCallback()])
+
+
+# tmp = df.groupby(sentence_id,
+#                  as_index=False)[word_id].agg({list_col_nm: list})
+# sentences = tmp[list_col_nm].values.tolist()
+# all_words_vocabulary = df[word_id].unique().tolist()
+# del tmp[list_col_nm]
+# gc.collect()
+
+# if embedding_type == 'w2v':
+#     model = Word2Vec(
+#         sentences,
+#         size=emb_size,
+#         window=150,
+#         workers=n_jobs,
+#         min_count=1,  # 最低词频. min_count>1会出现OOV
+#         sg=sg,  # 1 for skip-gram; otherwise CBOW.
+#         hs=hs,  # If 1, hierarchical softmax will be used for model training
+#         negative=negative,  # hs=1 + negative 负采样
+#         iter=epoch,
+#         seed=0)

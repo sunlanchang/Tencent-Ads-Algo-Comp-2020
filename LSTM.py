@@ -1,4 +1,95 @@
-# 后续可以外部导入最佳网络结构
+# %%
+import os
+from tqdm import tqdm
+import numpy as np
+import pandas as pd
+import argparse
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras import losses
+from tensorflow.keras import optimizers
+from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
+from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Dropout, Concatenate, Bidirectional, GlobalMaxPooling1D
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.utils import to_categorical
+from gensim.models import Word2Vec, KeyedVectors
+from layers import Add, LayerNormalization
+from layers import MultiHeadAttention, PositionWiseFeedForward
+from layers import PositionEncoding
+from tensorflow.keras.callbacks import Callback
+import tensorflow.keras.backend as K
+
+# %%
+
+
+def get_data():
+    DATA = {}
+    DATA['X1_train'] = np.load('tmp/inputs_0.npy', allow_pickle=True)
+    DATA['X1_val'] = np.load('tmp/inputs_1.npy', allow_pickle=True)
+    DATA['X2_train'] = np.load('tmp/inputs_2.npy', allow_pickle=True)
+    DATA['X2_val'] = np.load('tmp/inputs_3.npy', allow_pickle=True)
+    DATA['X3_train'] = np.load('tmp/inputs_4.npy', allow_pickle=True)
+    DATA['X3_val'] = np.load('tmp/inputs_5.npy', allow_pickle=True)
+    DATA['X4_train'] = np.load('tmp/inputs_6.npy', allow_pickle=True)
+    DATA['X4_val'] = np.load('tmp/inputs_7.npy', allow_pickle=True)
+    DATA['X5_train'] = np.load('tmp/inputs_8.npy', allow_pickle=True)
+    DATA['X5_val'] = np.load('tmp/inputs_9.npy', allow_pickle=True)
+    DATA['X6_train'] = np.load('tmp/inputs_10.npy', allow_pickle=True)
+    DATA['X6_val'] = np.load('tmp/inputs_11.npy', allow_pickle=True)
+    DATA['Y_gender_train'] = np.load('tmp/gender_0.npy', allow_pickle=True)
+    DATA['Y_gender_val'] = np.load('tmp/gender_1.npy', allow_pickle=True)
+    DATA['Y_age_train'] = np.load('tmp/age_0.npy', allow_pickle=True)
+    DATA['Y_age_val'] = np.load('tmp/age_1.npy', allow_pickle=True)
+    DATA['creative_id_emb'] = np.load(
+        'tmp/embeddings_0.npy', allow_pickle=True)
+    DATA['ad_id_emb'] = np.load(
+        'tmp/embeddings_1.npy', allow_pickle=True)
+    DATA['product_id_emb'] = np.load(
+        'tmp/embeddings_2.npy', allow_pickle=True)
+    DATA['advertiser_id_emb'] = np.load(
+        'tmp/embeddings_3.npy', allow_pickle=True)
+    DATA['industry_emb'] = np.load(
+        'tmp/embeddings_4.npy', allow_pickle=True)
+    DATA['product_category_emb'] = np.load(
+        'tmp/embeddings_5.npy', allow_pickle=True)
+
+    # DATA['Y_age_train'] = pd.read_csv(
+    #     'data/train_preliminary/user.csv').age.values-1
+    # DATA['Y_age_val'] = pd.read_csv(
+    #     'data/train_preliminary/user.csv').age.values-1
+    # DATA['Y_gender_train'] = pd.read_csv(
+    #     'data/train_preliminary/user.csv').gender.values-1
+    # DATA['Y_gender_val'] = pd.read_csv(
+    #     'data/train_preliminary/user.csv').gender.values-1
+
+    return DATA
+
+
+# %%
+DATA = get_data()
+
+cols_to_emb = ['creative_id', 'ad_id', 'advertiser_id',
+               'product_id', 'industry', 'product_category']
+
+emb_matrix_dict = {
+    'creative_id': [DATA['creative_id_emb'].astype('float32')],
+    'ad_id': [DATA['ad_id_emb'].astype('float32')],
+    'product_id': [DATA['product_id_emb'].astype('float32')],
+    'advertiser_id': [DATA['advertiser_id_emb'].astype('float32')],
+    'industry': [DATA['industry_emb'].astype('float32')],
+    'product_category': [DATA['product_category_emb'].astype('float32')],
+}
+
+conv1d_info_dict = {'creative_id': 128, 'ad_id': 128, 'advertiser_id': 128,
+                    'industry': 128, 'product_category': 128,
+                    'product_id': 128, 'time': 32, 'click_times': -1}
+# %%
+seq_length_creative_id = 100
+labeli = 'age'
+# %%
 
 
 class BiLSTM_Model:
@@ -12,7 +103,7 @@ class BiLSTM_Model:
 
     def get_emb_layer(self, emb_matrix, input_length, trainable):
         '''
-        embedding层 index 从maxtrix 里 lookup出向量 
+        embedding层 index 从maxtrix 里 lookup出向量
         '''
         embedding_dim = emb_matrix.shape[-1]
         input_dim = emb_matrix.shape[0]
@@ -22,7 +113,7 @@ class BiLSTM_Model:
                                            trainable=trainable)
         return emb_layer
 
-    def get_input_layer(self, name=None, dtype="int32"):
+    def get_input_layer(self, name=None, dtype="int64"):
         '''
         input层 字典索引序列
         '''
@@ -114,27 +205,69 @@ class BiLSTM_Model:
         print(model.summary())
         optimizer = keras.optimizers.Adam(1e-3)
         model.compile(optimizer=optimizer,
-                      loss='sparse_categorical_crossentropy',
+                      #   loss='sparse_categorical_crossentropy',
+                      loss=tf.keras.losses.CategoricalCrossentropy(
+                          from_logits=False),
                       metrics=['accuracy'])
         return model
 
 
-earlystop_callback = tf.keras.callbacks.EarlyStopping(
-    monitor="val_accuracy",
-    min_delta=0.00001,
-    patience=3,
-    verbose=1,
-    mode="max",
-    baseline=None,
-    restore_best_weights=True,
+# %%
+model = BiLSTM_Model(n_units=128).create_model(10, 'age')
+
+# %%
+# train_examples = 720000
+# val_examples = 180000
+train_examples = 810000
+val_examples = 90000
+model.fit(
+    {
+        'creative_id': DATA['X1_train'][:train_examples],
+        'ad_id': DATA['X2_train'][:train_examples],
+        'product_id': DATA['X3_train'][:train_examples],
+        'advertiser_id': DATA['X4_train'][:train_examples],
+        'industry': DATA['X5_train'][:train_examples],
+        'product_category': DATA['X6_train'][:train_examples]
+    },
+    {
+        # 'gender': DATA['Y_gender_train'][:train_examples],
+        'age': DATA['Y_age_train'][:train_examples],
+    },
+    validation_data=(
+        {
+            'creative_id': DATA['X1_val'][:val_examples],
+            'ad_id': DATA['X2_val'][:val_examples],
+            'product_id': DATA['X3_val'][:val_examples],
+            'advertiser_id': DATA['X4_val'][:val_examples],
+            'industry': DATA['X5_val'][:val_examples],
+            'product_category': DATA['X6_val'][:val_examples]
+        },
+        {
+            # 'gender': DATA['Y_gender_val'][:val_examples],
+            'age': DATA['Y_age_val'][:val_examples],
+        },
+    ),
+    epochs=10,
+    batch_size=1024,
+    # callbacks=[checkpoint, earlystop_callback, reduce_lr_callback],
 )
+# %%
+# earlystop_callback = tf.keras.callbacks.EarlyStopping(
+#     monitor="val_accuracy",
+#     min_delta=0.00001,
+#     patience=3,
+#     verbose=1,
+#     mode="max",
+#     baseline=None,
+#     restore_best_weights=True,
+# )
 
-csv_log_callback = tf.keras.callbacks.CSVLogger(
-    filename='logs_save/{}_nn_v0621_{}d_bilstm.log'.format(labeli, count), separator=",", append=True)
+# csv_log_callback = tf.keras.callbacks.CSVLogger(
+#     filename='logs_save/{}_nn_v0621_{}d_bilstm.log'.format(labeli, count), separator=",", append=True)
 
-reduce_lr_callback = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_accuracy',
-                                                          factor=0.5,
-                                                          patience=1,
-                                                          min_lr=0.0000001)
+# reduce_lr_callback = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_accuracy',
+#                                                           factor=0.5,
+#                                                           patience=1,
+#                                                           min_lr=0.0000001)
 
-callbacks = [earlystop_callback, csv_log_callback, reduce_lr_callback]
+# callbacks = [earlystop_callback, csv_log_callback, reduce_lr_callback]
