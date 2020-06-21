@@ -447,10 +447,6 @@ y_pred_gender = np.argmax(y_pred_gender, axis=1)
 y_pred_gender = y_pred_gender.flatten()
 y_pred_gender += 1
 
-ans_gender = pd.DataFrame({'predicted_gender': y_pred_gender})
-ans_gender.to_csv(
-    'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_gender.csv', header=True, columns=['predicted_gender'], index=False)
-
 y_pred_age = model_age.predict(
     {
         'creative_id': DATA['X1_test'],
@@ -466,20 +462,13 @@ y_pred_age = np.argmax(y_pred_age, axis=1)
 y_pred_age = y_pred_age.flatten()
 y_pred_age += 1
 
-ans_age = pd.DataFrame({'predicted_age': y_pred_age})
-ans_age.to_csv(
-    'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_age.csv', header=True, columns=['predicted_age'], index=False)
 
 # slc
 user_id_test = pd.read_csv(
     'data/test/clicklog_ad.csv').sort_values(['user_id'], ascending=(True,)).user_id.unique()
 ans = pd.DataFrame({'user_id': user_id_test})
 
-gender = pd.read_csv(
-    'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_gender.csv')
-age = pd.read_csv(
-    'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_age.csv')
-ans['predicted_gender'] = gender.predicted_gender
-ans['predicted_age'] = age.predicted_age
+ans['predicted_gender'] = y_pred_gender
+ans['predicted_age'] = y_pred_age
 ans.to_csv('C:/Users/yrqun/Desktop/TMP/trans/tmp/submission.csv', header=True, index=False,
            columns=['user_id', 'predicted_age', 'predicted_gender'])
