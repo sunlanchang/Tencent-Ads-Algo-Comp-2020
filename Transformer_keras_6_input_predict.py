@@ -435,15 +435,16 @@ DATA['product_category_emb'] = np.load(
     'C:/Users/yrqun/Desktop/TMP/trans/tmp/embeddings_5.npy', allow_pickle=True)
 
 # %%
-if args.gender:
-    model = get_gender_model(DATA)
-if args.age:
-    model = get_age_model(DATA)
+model_gender = get_gender_model(DATA)
+model_age = get_age_model(DATA)
 
-##############################################slc
-model.load_weights('C:/Users/yrqun/Desktop/TMP/trans/tmp/gender_epoch_01.hdf5')
+# slc
+model_gender.load_weights(
+    'C:/Users/yrqun/Desktop/TMP/trans/tmp/gender_epoch_01.hdf5')
+model_age.load_weights(
+    'C:/Users/yrqun/Desktop/TMP/trans/tmp/age_epoch_01.hdf5')
 
-y_pred = model.predict(
+y_pred_gender = model_gender.predict(
     {
         'creative_id': DATA['X1_test'],
         'ad_id': DATA['X2_test'],
@@ -454,30 +455,43 @@ y_pred = model.predict(
     },
     batch_size=1024,
 )
-y_pred = np.argmax(y_pred, axis=1)
-y_pred = y_pred.flatten()
-y_pred += 1
+y_pred_gender = np.argmax(y_pred_gender, axis=1)
+y_pred_gender = y_pred_gender.flatten()
+y_pred_gender += 1
 
-if args.gender:
-    ans = pd.DataFrame({'predicted_gender': y_pred})
-    ans.to_csv(
-        'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_gender.csv', header=True, columns=['predicted_gender'], index=False)
-elif args.age:
-    ans = pd.DataFrame({'predicted_age': y_pred})
-    ans.to_csv(
-        'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_age.csv', header=True, columns=['predicted_age'], index=False)
+ans_gender = pd.DataFrame({'predicted_gender': y_pred_gender})
+ans_gender.to_csv(
+    'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_gender.csv', header=True, columns=['predicted_gender'], index=False)
 
-if args.gender and args.age:
-    ##########################slc
-    user_id_test = pd.read_csv(
-        'data/test/clicklog_ad.csv').sort_values(['user_id'], ascending=(True,)).user_id.unique()
-    ans = pd.DataFrame({'user_id': user_id_test})
+y_pred_age = model_age.predict(
+    {
+        'creative_id': DATA['X1_test'],
+        'ad_id': DATA['X2_test'],
+        'product_id': DATA['X3_test'],
+        'advertiser_id': DATA['X4_test'],
+        'industry': DATA['X5_test'],
+        'product_category': DATA['X6_test']
+    },
+    batch_size=1024,
+)
+y_pred_age = np.argmax(y_pred_age, axis=1)
+y_pred_age = y_pred_age.flatten()
+y_pred_age += 1
 
-    gender = pd.read_csv(
-        'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_gender.csv')
-    age = pd.read_csv(
-        'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_age.csv')
-    ans['predicted_gender'] = gender.predicted_gender
-    ans['predicted_age'] = age.predicted_age
-    ans.to_csv('C:/Users/yrqun/Desktop/TMP/trans/tmp/submission.csv', header=True, index=False,
-               columns=['user_id', 'predicted_age', 'predicted_gender'])
+ans_age = pd.DataFrame({'predicted_age': y_pred_age})
+ans_age.to_csv(
+    'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_age.csv', header=True, columns=['predicted_age'], index=False)
+
+# slc
+user_id_test = pd.read_csv(
+    'data/test/clicklog_ad.csv').sort_values(['user_id'], ascending=(True,)).user_id.unique()
+ans = pd.DataFrame({'user_id': user_id_test})
+
+gender = pd.read_csv(
+    'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_gender.csv')
+age = pd.read_csv(
+    'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_age.csv')
+ans['predicted_gender'] = gender.predicted_gender
+ans['predicted_age'] = age.predicted_age
+ans.to_csv('C:/Users/yrqun/Desktop/TMP/trans/tmp/submission.csv', header=True, index=False,
+           columns=['user_id', 'predicted_age', 'predicted_gender'])
