@@ -45,7 +45,6 @@ parser.add_argument('--load_from_npy', action='store_true',
                     default=False)
 parser.add_argument('--not_train_embedding', action='store_false',
                     help='从npy文件加载数据',
-
                     default=True)
 parser.add_argument('--gender', action='store_true',
                     help='gender model',
@@ -340,67 +339,43 @@ def get_train_val():
     print('获取 creative_id 特征')
     tokenizer, X1_test = get_train(
         'creative_id', NUM_creative_id+1, LEN_creative_id)  # +1为了UNK的creative_id
-    # creative_id_emb = get_embedding('creative_id', tokenizer)
 
-    # DATA['X1_train'] = X1_train[:train_examples]
-    # DATA['X1_val'] = X1_train[train_examples:]
     DATA['X1_test'] = X1_test
-    # DATA['creative_id_emb'] = creative_id_emb
 
     # 第二个输入
     print('获取 ad_id 特征')
     tokenizer, X2_test = get_train(
         'ad_id', NUM_ad_id+1, LEN_ad_id)
-    # ad_id_emb = get_embedding('ad_id', tokenizer)
 
-    # DATA['X2_train'] = X2_train[:train_examples]
-    # DATA['X2_val'] = X2_train[train_examples:]
     DATA['X2_test'] = X2_test
-    # DATA['ad_id_emb'] = ad_id_emb
 
     # 第三个输入
     print('获取 product_id 特征')
     tokenizer, X3_test = get_train(
         'product_id', NUM_product_id+1, LEN_product_id)
-    # product_id_emb = get_embedding('product_id', tokenizer)
 
-    # DATA['X3_train'] = X3_train[:train_examples]
-    # DATA['X3_val'] = X3_train[train_examples:]
     DATA['X3_test'] = X3_test
-    # DATA['product_id_emb'] = product_id_emb
 
     # 第四个输入
     print('获取 advertiser_id 特征')
     tokenizer, X4_test = get_train(
         'advertiser_id', NUM_advertiser_id+1, LEN_advertiser_id)
-    # advertiser_id_emb = get_embedding('advertiser_id', tokenizer)
 
-    # DATA['X4_train'] = X4_train[:train_examples]
-    # DATA['X4_val'] = X4_train[train_examples:]
     DATA['X4_test'] = X4_test
-    # DATA['advertiser_id_emb'] = advertiser_id_emb
 
     # 第五个输入
     print('获取 industry 特征')
     tokenizer, X5_test = get_train(
         'industry', NUM_industry+1, LEN_industry)
-    # industry_emb = get_embedding('industry', tokenizer)
 
-    # DATA['X5_train'] = X5_train[:train_examples]
-    # DATA['X5_val'] = X5_train[train_examples:]
     DATA['X5_test'] = X5_test
-    # DATA['industry_emb'] = industry_emb
 
     # 第六个输入
     print('获取 product_category 特征')
     tokenizer, X6_test = get_train(
         'product_category', NUM_product_category+1, LEN_product_category)
-    # product_category_emb = get_embedding('product_category', tokenizer)
 
-    # DATA['X6_train'] = X6_train[:train_examples]
-    # DATA['X6_val'] = X6_train[train_examples:]
     DATA['X6_test'] = X6_test
-    # DATA['product_category_emb'] = product_category_emb
 
     return DATA
 
@@ -464,7 +439,7 @@ if args.gender:
 if args.age:
     model = get_age_model(DATA)
 
-##############################################
+# slc
 model.load_weights('C:/Users/yrqun/Desktop/TMP/trans/tmp/gender_epoch_01.hdf5')
 
 y_pred = model.predict(
@@ -492,7 +467,7 @@ elif args.age:
         'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_age.csv', header=True, columns=['predicted_age'], index=False)
 
 if args.gender and args.age:
-    ##########################
+    # slc
     user_id_test = pd.read_csv(
         'data/test/clicklog_ad.csv').sort_values(['user_id'], ascending=(True,)).user_id.unique()
     ans = pd.DataFrame({'user_id': user_id_test})
