@@ -271,7 +271,7 @@ def get_age_model(DATA):
 
     # (bs, 100, 128*2)
     # concat之后是632
-    attention_out = MultiHeadAttention(8, 76)(
+    attention_out = MultiHeadAttention(8, 79)(
         [encodings, encodings, encodings, masks])
 
     # Add & Norm
@@ -318,7 +318,9 @@ def get_train_val():
         path = f'word2vec_new/{feature_name}.kv'
         wv = KeyedVectors.load(path, mmap='r')
         feature_tokens = list(wv.vocab.keys())
-        embedding_dim = 128
+        feature_name_dict = {'creative_id': 256, 'ad_id': 256, 'advertiser_id': 64,
+                             'product_id': 32, 'product_category': 8, 'industry': 16}
+        embedding_dim = feature_name_dict[feature_name]
         embedding_matrix = np.random.randn(
             len(feature_tokens)+1, embedding_dim)
         for feature in feature_tokens:
