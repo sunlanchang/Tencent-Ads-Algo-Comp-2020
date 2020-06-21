@@ -518,6 +518,10 @@ if args.gender:
             baseline=None,
             restore_best_weights=True,
         )
+        reduce_lr_callback = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_accuracy',
+                                                                  factor=0.5,
+                                                                  patience=1,
+                                                                  min_lr=0.0000001)
         model = get_gender_model(DATA)
         model.summary()
 
@@ -553,7 +557,7 @@ if args.gender:
             ),
             epochs=args.epoch,
             batch_size=args.batch_size,
-            callbacks=[checkpoint, earlystop_callback],
+            callbacks=[checkpoint, earlystop_callback, reduce_lr_callback],
         )
         # mail('train done!!!')
     except Exception as e:
@@ -573,6 +577,10 @@ elif args.age:
             baseline=None,
             restore_best_weights=True,
         )
+        reduce_lr_callback = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_accuracy',
+                                                                  factor=0.5,
+                                                                  patience=1,
+                                                                  min_lr=0.0000001)
         model = get_age_model(DATA)
         model.summary()
 
@@ -608,7 +616,7 @@ elif args.age:
             ),
             epochs=args.epoch,
             batch_size=args.batch_size,
-            callbacks=[checkpoint, earlystop_callback],
+            callbacks=[checkpoint, earlystop_callback, reduce_lr_callback],
         )
         # mail('train done!!!')
     except Exception as e:
