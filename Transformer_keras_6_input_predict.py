@@ -320,12 +320,14 @@ def get_train_val():
 
     # 从序列文件提取array格式数据
     def get_train(feature_name, vocab_size, len_feature):
+        ########################################
         f = open(f'word2vec_new/{feature_name}.txt')
         tokenizer = Tokenizer(num_words=vocab_size)
         tokenizer.fit_on_texts(f)
         f.close()
 
         feature_seq = []
+        #########################################
         with open(f'word2vec_new/{feature_name}.txt') as f:
             for text in f:
                 feature_seq.append(text.strip())
@@ -341,6 +343,7 @@ def get_train_val():
 
     # 提取词向量文件
     def get_embedding(feature_name, tokenizer):
+        ########################################
         path = f'word2vec_new/{feature_name}.kv'
         wv = KeyedVectors.load(path, mmap='r')
         feature_tokens = list(wv.vocab.keys())
@@ -362,6 +365,7 @@ def get_train_val():
 
     # 构造输出的训练标签
     # 获得age、gender标签
+    #######################################################
     user_train = pd.read_csv(
         'data/train_preliminary/user.csv').sort_values(['user_id'], ascending=(True,))
     Y_gender = user_train['gender'].values
@@ -537,174 +541,50 @@ else:
 # %%
 
 # # %%
+# %%
 if args.gender:
-    try:
-        checkpoint = ModelCheckpoint("tmp/gender_epoch_{epoch:02d}.hdf5", save_weights_only=True, monitor='val_loss', verbose=1,
-                                     save_best_only=False, mode='auto', period=3)
-        earlystop_callback = tf.keras.callbacks.EarlyStopping(
-            monitor="val_accuracy",
-            min_delta=0.00001,
-            patience=3,
-            verbose=1,
-            mode="max",
-            baseline=None,
-            restore_best_weights=True,
-        )
-        reduce_lr_callback = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_accuracy',
-                                                                  factor=0.5,
-                                                                  patience=1,
-                                                                  min_lr=0.0000001)
-        model = get_gender_model(DATA)
-        model.summary()
+    model = get_gender_model(DATA)
+if args.age:
+    model = get_age_model(DATA)
 
-        train_examples = args.train_examples
-        val_examples = args.val_examples
-        # mail('start train')
-        model.fit(
-            {
-                'creative_id': DATA['X1_train'][:train_examples],
-                'ad_id': DATA['X2_train'][:train_examples],
-                'product_id': DATA['X3_train'][:train_examples],
-                'advertiser_id': DATA['X4_train'][:train_examples],
-                'industry': DATA['X5_train'][:train_examples],
-                'product_category': DATA['X6_train'][:train_examples]
-            },
-            {
-                'gender': DATA['Y_gender_train'][:train_examples],
-                # 'age': DATA['Y_age_train'][:train_examples],
-            },
-            validation_data=(
-                {
-                    'creative_id': DATA['X1_val'][:val_examples],
-                    'ad_id': DATA['X2_val'][:val_examples],
-                    'product_id': DATA['X3_val'][:val_examples],
-                    'advertiser_id': DATA['X4_val'][:val_examples],
-                    'industry': DATA['X5_val'][:val_examples],
-                    'product_category': DATA['X6_val'][:val_examples]
-                },
-                {
-                    'gender': DATA['Y_gender_val'][:val_examples],
-                    # 'age': DATA['Y_age_val'][:val_examples],
-                },
-            ),
-            epochs=args.epoch,
-            batch_size=args.batch_size,
-            callbacks=[checkpoint, earlystop_callback, reduce_lr_callback],
-        )
-        # mail('train done!!!')
-    except Exception as e:
-        # e = str(e)
-        # mail('train failed!!! ' + e)
-        print(e)
+##############################################
+model.load_weights('tmp/gender_epoch_01.hdf5')
+
+y_pred = model.predict(
+    {
+        'creative_id': DATA['X1_test'],
+        'ad_id': DATA['X2_test'],
+        'product_id': DATA['X3_test'],
+        'advertiser_id': DATA['X4_test'],
+        'industry': DATA['X5_test'],
+        'product_category': DATA['X6_test']
+    },
+    batch_size=1024,
+)
+y_pred = np.argmax(y_pred, axis=1)
+y_pred = y_pred.flatten()
+y_pred += 1
+
+if args.gender:
+    ans = pd.DataFrame({'predicted_gender': y_pred})
+    ################################################
+    ans.to_csv(
+        'data/ans/transformer_gender.csv', header=True, columns=['predicted_gender'], index=False)
 elif args.age:
-    try:
-        checkpoint = ModelCheckpoint("tmp/age_epoch_{epoch:02d}.hdf5", save_weights_only=True, monitor='val_loss', verbose=1,
-                                     save_best_only=False, mode='auto', period=3)
-        earlystop_callback = tf.keras.callbacks.EarlyStopping(
-            monitor="val_accuracy",
-            min_delta=0.00001,
-            patience=3,
-            verbose=1,
-            mode="max",
-            baseline=None,
-            restore_best_weights=True,
-        )
-        reduce_lr_callback = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_accuracy',
-                                                                  factor=0.5,
-                                                                  patience=1,
-                                                                  min_lr=0.0000001)
-        model = get_age_model(DATA)
-        model.summary()
+    ans = pd.DataFrame({'predicted_age': y_pred})
+    ################################################
+    ans.to_csv(
+        'data/ans/transformer_age.csv', header=True, columns=['predicted_age'], index=False)
 
-        train_examples = args.train_examples
-        val_examples = args.val_examples
-        # mail('start train')
-        model.fit(
-            {
-                'creative_id': DATA['X1_train'][:train_examples],
-                'ad_id': DATA['X2_train'][:train_examples],
-                'product_id': DATA['X3_train'][:train_examples],
-                'advertiser_id': DATA['X4_train'][:train_examples],
-                'industry': DATA['X5_train'][:train_examples],
-                'product_category': DATA['X6_train'][:train_examples]
-            },
-            {
-                # 'gender': DATA['Y_gender_train'][:train_examples],
-                'age': DATA['Y_age_train'][:train_examples],
-            },
-            validation_data=(
-                {
-                    'creative_id': DATA['X1_val'][:val_examples],
-                    'ad_id': DATA['X2_val'][:val_examples],
-                    'product_id': DATA['X3_val'][:val_examples],
-                    'advertiser_id': DATA['X4_val'][:val_examples],
-                    'industry': DATA['X5_val'][:val_examples],
-                    'product_category': DATA['X6_val'][:val_examples]
-                },
-                {
-                    # 'gender': DATA['Y_gender_val'][:val_examples],
-                    'age': DATA['Y_age_val'][:val_examples],
-                },
-            ),
-            epochs=args.epoch,
-            batch_size=args.batch_size,
-            callbacks=[checkpoint, earlystop_callback, reduce_lr_callback],
-        )
-        # mail('train done!!!')
-    except Exception as e:
-        # e = str(e)
-        # mail('train failed!!! ' + e)
-        print(e)
-# %%
-if args.predict:
-    model.load_weights('tmp/gender_epoch_01.hdf5')
-    y_pred = model.predict(
-        {
-            'creative_id': DATA['X1_test'],
-            'ad_id': DATA['X2_test'],
-            'product_id': DATA['X3_test'],
-            'advertiser_id': DATA['X4_test'],
-            'industry': DATA['X5_test'],
-            'product_category': DATA['X6_test']
-        },
-        batch_size=1024,
-    )
-    y_pred = np.argmax(y_pred, axis=1)
-    y_pred = y_pred.flatten()
-    y_pred += 1
+    ##############################################
+    user_id_test = pd.read_csv(
+        'data/test/clicklog_ad.csv').sort_values(['user_id'], ascending=(True,)).user_id.unique()
+    ans = pd.DataFrame({'user_id': user_id_test})
 
-    if args.gender:
-        ans = pd.DataFrame({'predicted_gender': y_pred})
-        ans.to_csv(
-            'data/ans/transformer_gender.csv', header=True, columns=['predicted_gender'], index=False)
-    elif args.age:
-        ans = pd.DataFrame({'predicted_age': y_pred})
-        ans.to_csv(
-            'data/ans/transformer_age.csv', header=True, columns=['predicted_age'], index=False)
-
-        user_id_test = pd.read_csv(
-            'data/test/clicklog_ad.csv').sort_values(['user_id'], ascending=(True,)).user_id.unique()
-        ans = pd.DataFrame({'user_id': user_id_test})
-
-        gender = pd.read_csv('data/ans/transformer_gender.csv')
-        age = pd.read_csv('data/ans/transformer_age.csv')
-        ans['predicted_gender'] = gender.predicted_gender
-        ans['predicted_age'] = age.predicted_age
-        ans.to_csv('data/ans/submission.csv', header=True, index=False,
-                   columns=['user_id', 'predicted_age', 'predicted_gender'])
-# %%
-# y_pred = np.where(y_pred > 0.5, 1, 0)
-# y_pred = y_pred.flatten()
-
-# # %%
-# y_pred = y_pred+1
-# # %%
-# res = pd.DataFrame({'predicted_gender': y_pred})
-# res.to_csv(
-#     'data/ans/lstm_gender.csv', header=True, columns=['predicted_gender'], index=False)
-
-
-# # %%
-# mail('predict lstm gender done')
-
-# %%
+    ##############################################
+    gender = pd.read_csv('data/ans/transformer_gender.csv')
+    age = pd.read_csv('data/ans/transformer_age.csv')
+    ans['predicted_gender'] = gender.predicted_gender
+    ans['predicted_age'] = age.predicted_age
+    ans.to_csv('data/ans/submission.csv', header=True, index=False,
+               columns=['user_id', 'predicted_age', 'predicted_gender'])
