@@ -33,7 +33,7 @@ from mymail import mail
 
 tf.config.experimental_run_functions_eagerly(True)
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 '''
 python Transformer_keras.py --load_from_npy --batch_size 256 --epoch 5 --num_transformer 1 --head_attention 1 --num_lstm 1 --examples 100000
