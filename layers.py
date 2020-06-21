@@ -160,12 +160,13 @@ class MultiHeadAttention(Layer):
         if self._masking:
             assert len(
                 inputs) == 4, "inputs should be set [queries, keys, values, masks]."
+            # (bs, 100, 256)
             queries, keys, values, masks = inputs
         else:
             assert len(
                 inputs) == 3, "inputs should be set [queries, keys, values]."
             queries, keys, values = inputs
-
+        # (bs, 100, 256)*(256, 512) ==> (bs, 100, 512)
         queries_linear = K.dot(queries, self._weights_queries)
         keys_linear = K.dot(keys, self._weights_keys)
         values_linear = K.dot(values, self._weights_values)
@@ -186,11 +187,16 @@ class MultiHeadAttention(Layer):
 
         attention = ScaledDotProductAttention(
             masking=self._masking, future=self._future, dropout_rate=self._dropout_rate)
+        # att_out: (bs, 100, 64)
         att_out = attention(att_inputs)
 
         outputs = tf.concat(tf.split(att_out, self._n_heads, axis=0), axis=2)
-
+        # print('**********************',
+        #       len(tf.split(att_out, self._n_heads, axis=0)))
+        # print('**********************',
+        #       [e.shape for e in tf.split(att_out, self._n_heads, axis=0)])
         return outputs
+        # return queries_linear
 
     def compute_output_shape(self, input_shape):
         return input_shape
