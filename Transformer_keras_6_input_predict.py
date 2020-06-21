@@ -45,6 +45,7 @@ parser.add_argument('--load_from_npy', action='store_true',
                     default=False)
 parser.add_argument('--not_train_embedding', action='store_false',
                     help='从npy文件加载数据',
+
                     default=True)
 parser.add_argument('--gender', action='store_true',
                     help='gender model',
@@ -439,7 +440,7 @@ if args.gender:
 if args.age:
     model = get_age_model(DATA)
 
-# slc
+##############################################slc
 model.load_weights('C:/Users/yrqun/Desktop/TMP/trans/tmp/gender_epoch_01.hdf5')
 
 y_pred = model.predict(
@@ -467,7 +468,7 @@ elif args.age:
         'C:/Users/yrqun/Desktop/TMP/trans/tmp/transformer_age.csv', header=True, columns=['predicted_age'], index=False)
 
 if args.gender and args.age:
-    # slc
+    ##########################slc
     user_id_test = pd.read_csv(
         'data/test/clicklog_ad.csv').sort_values(['user_id'], ascending=(True,)).user_id.unique()
     ans = pd.DataFrame({'user_id': user_id_test})
